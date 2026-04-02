@@ -1,0 +1,23 @@
+.birds-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 4rem 2rem;
+}
+
+.birds-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.birds-content h1 {
+  color: #667eea;
+  margin-bottom: 1rem;
+}
+
+.birds-content p {
+  color: #666;
+}

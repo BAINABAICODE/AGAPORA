@@ -1,0 +1,29 @@
+.help-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 4rem 2rem;
+}
+
+.help-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.help-content h1 {
+  color: #667eea;
+  margin-bottom: 2rem;
+}
+
+.faq-section h3 {
+  color: #333;
+  margin: 1.5rem 0 0.5rem 0;
+}
+
+.faq-section p {
+  color: #666;
+  line-height: 1.6;
+}

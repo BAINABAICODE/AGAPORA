@@ -1,0 +1,20 @@
+.reminder-popup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1500;
+}
+
+.reminder-content {
+  background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-out;
+}
+
+.reminder-content p {
+  margin: 0;
+  font-size: 0.9rem;
+}
