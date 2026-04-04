@@ -1,20 +1,90 @@
-.reminder-popup {
+.reminder-overlay {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1500;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease-out;
 }
 
-.reminder-content {
-  background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+.reminder-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+.reminder-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s;
+}
+.reminder-close:hover {
+  color: #333;
+}
+
+.reminder-card h3 {
+  margin-top: 0;
+  color: #1a1a2e;
+  font-size: 1.5rem;
+}
+
+.reminder-card p {
+  color: #555;
+  margin: 1rem 0;
+}
+
+.reminder-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.reminder-login, .reminder-signup {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.reminder-login {
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  animation: slideIn 0.3s ease-out;
+}
+.reminder-signup {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+.reminder-login:hover, .reminder-signup:hover {
+  transform: translateY(-2px);
 }
 
-.reminder-content p {
-  margin: 0;
-  font-size: 0.9rem;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }

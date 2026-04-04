@@ -5,6 +5,7 @@ import './AdminDashboard.css';
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -14,8 +15,10 @@ const AdminDashboard = () => {
     try {
       const response = await api.get('/admin/users');
       setUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to load users. Make sure you are logged in as admin.');
     } finally {
       setLoading(false);
     }
@@ -26,9 +29,10 @@ const AdminDashboard = () => {
       try {
         await api.delete(`/admin/users/${userId}`);
         setUsers(users.filter(user => user.id !== userId));
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Failed to delete user');
+        alert('User deleted successfully');
+      } catch (err) {
+        console.error('Error deleting user:', err);
+        alert(err.response?.data?.message || 'Failed to delete user');
       }
     }
   };
@@ -37,10 +41,15 @@ const AdminDashboard = () => {
     return <div className="admin-loading">Loading...</div>;
   }
 
+  if (error) {
+    return <div className="admin-error">{error}</div>;
+  }
+
   return (
     <div className="admin-container">
       <div className="admin-content">
         <h1>Admin Dashboard</h1>
+        <p>Total Users: {users.length}</p>
         <div className="users-table-container">
           <table className="users-table">
             <thead>
@@ -60,12 +69,15 @@ const AdminDashboard = () => {
                   <td>{user.email}</td>
                   <td>{user.role}</td>
                   <td>
-                    <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      className="delete-btn"
-                    >
-                      Delete
-                    </button>
+                    {user.role !== 'admin' && (
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="delete-btn"
+                      >
+                        Delete
+                      </button>
+                    )}
+                    {user.role === 'admin' && <span>Protected</span>}
                   </td>
                 </tr>
               ))}

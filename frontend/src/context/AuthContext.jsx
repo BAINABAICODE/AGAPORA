@@ -6,79 +6,72 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        if (token && storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+        setLoading(false);
+    }, []);
 
-  const fetchUser = async () => {
-    try {
-      const response = await api.get('/user');
-      setUser(response.data);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
+    const login = async (email, password) => {
+        try {
+            const response = await api.post('/login', { email, password });
+            const { token, user } = response.data;
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            setUser(user);
+            return { success: true };
+        } catch (error) {
+            console.error('Login error:', error);
+            const message = error.response?.data?.message || 'Login failed';
+            return { success: false, error: message };
+        }
+    };
 
-  const login = async (email, password) => {
-    try {
-      const response = await api.post('/login', { email, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      return { success: true, user };
-    } catch (error) {
-      return { success: false, error: error.response?.data?.message || 'Login failed' };
-    }
-  };
+    const register = async (name, email, password) => {
+        try {
+            const response = await api.post('/register', { name, email, password });
+            const { token, user } = response.data;
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            setUser(user);
+            return { success: true };
+        } catch (error) {
+            console.error('Register error:', error);
+            const message = error.response?.data?.message || 'Registration failed';
+            return { success: false, error: message };
+        }
+    };
 
-  const register = async (name, email, password) => {
-    try {
-      const response = await api.post('/register', { name, email, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      return { success: true, user };
-    } catch (error) {
-      return { success: false, error: error.response?.data?.errors || 'Registration failed' };
-    }
-  };
+    const logout = async () => {
+        try {
+            await api.post('/logout');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+    };
 
-  const logout = async () => {
-    try {
-      await api.post('/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-  };
+    const forgotPassword = async (email) => {
+        try {
+            await api.post('/forgot-password', { email });
+            return { success: true, message: 'Reset link sent to your email' };
+        } catch (error) {
+            const message = error.response?.data?.message || 'Request failed';
+            return { success: false, error: message };
+        }
+    };
 
-  const forgotPassword = async (email) => {
-    try {
-      const response = await api.post('/forgot-password', { email });
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      return { success: false, error: error.response?.data?.errors || 'Request failed' };
-    }
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, login, register, logout, forgotPassword, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider value={{ user, login, register, logout, forgotPassword, loading }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };

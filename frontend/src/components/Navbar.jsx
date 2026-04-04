@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
+import logo from '../assets/birds/logo-lovebirds.png';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -18,18 +19,18 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <span className="logo-text">LoveBird</span>
+          <img src={logo} alt="Agapora Logo" className="logo-image" />
+          <span className="logo-text">Agapora</span>
         </Link>
 
         <div className="nav-menu">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/about" className="nav-link">About</Link>
           <Link to="/help" className="nav-link">Help</Link>
-          
+          <Link to="/breed" className="nav-link">Breed</Link>
+
           {user && (
             <>
-              <Link to="/birds" className="nav-link">Birds</Link>
-              <Link to="/bird-list" className="nav-link">Bird List</Link>
               {user.role === 'admin' && (
                 <Link to="/admin" className="nav-link">Admin</Link>
               )}

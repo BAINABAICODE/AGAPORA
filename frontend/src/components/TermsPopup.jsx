@@ -36,9 +36,7 @@ const TermsPopup = () => {
           <p>Please read these terms carefully before using our service.</p>
         </div>
         <div className="terms-actions">
-          <button onClick={handleAccept} className="accept-btn">
-            I Accept
-          </button>
+          <button onClick={handleAccept} className="accept-btn">I Accept</button>
         </div>
       </div>
     </div>
