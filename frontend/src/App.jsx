@@ -5,7 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import About from './pages/About';
 import Help from './pages/Help';
-import Birds from './pages/Birds';
+import Breed from './pages/Breed';
 import BirdList from './pages/BirdList';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPopup from './components/LoginPopup';
@@ -42,14 +42,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/help" element={<Help />} />
-        <Route
-          path="/birds"
-          element={
-            <ProtectedRoute>
-              <Birds />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/breed" element={<Breed />} />
         <Route
           path="/bird-list"
           element={
