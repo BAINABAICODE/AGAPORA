@@ -1,19 +1,43 @@
+// frontend/src/api/axios.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
-const api = axios.create({
-    baseURL: API_URL,
-    headers: { 'Content-Type': 'application/json' },
-    withCredentials: true,   // optional, helps with Sanctum session
+const axiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+    timeout: 10000,
 });
 
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+// Request interceptor
+axiosInstance.interceptors.request.use(
+    (config) => {
+        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        return config;
+    },
+    (error) => {
+        console.error('Request Error:', error);
+        return Promise.reject(error);
     }
-    return config;
-});
+);
 
-export default api;
+// Response interceptor
+axiosInstance.interceptors.response.use(
+    (response) => {
+        console.log(`API Response: ${response.status} ${response.config.url}`);
+        return response;
+    },
+    (error) => {
+        if (error.code === 'ERR_NETWORK') {
+            console.error('Network Error: Cannot connect to backend. Make sure Laravel is running on port 8000');
+        } else if (error.response) {
+            console.error(`API Error: ${error.response.status} - ${error.response.statusText}`);
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default axiosInstance;

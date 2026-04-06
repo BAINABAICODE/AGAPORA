@@ -1,32 +1,96 @@
 <?php
+// backend/routes/api.php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SpeciesController;
+use App\Http\Controllers\BreedingPairController;
+use App\Http\Controllers\ReferenceDataController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\BirdController;
-use App\Http\Controllers\BreedingController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GeneticComputationController;
 
-// Public routes
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// =============================================
+// PUBLIC ROUTES (No authentication required)
+// =============================================
+
+// Test route
+Route::get('/test', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'API is working properly!',
+        'timestamp' => now()
+    ]);
+});
+
+// Authentication routes (public)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
-// Protected routes (require authentication)
+// Species routes (public read-only)
+Route::get('/species', [SpeciesController::class, 'index']);
+Route::get('/species/{key}', [SpeciesController::class, 'show']);
+
+// Reference data routes (public read-only)
+Route::get('/references/species', [ReferenceDataController::class, 'getSpecies']);
+Route::get('/references/base-colors', [ReferenceDataController::class, 'getBaseColors']);
+Route::get('/references/visual-mutations', [ReferenceDataController::class, 'getVisualMutations']);
+Route::get('/references/split-genes', [ReferenceDataController::class, 'getSplitGenes']);
+Route::get('/references/all', [ReferenceDataController::class, 'getAllReferences']);
+
+// =============================================
+// PROTECTED ROUTES (Authentication required)
+// =============================================
+
 Route::middleware('auth:sanctum')->group(function () {
+    
+    // Authentication routes
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'getUser']);
     
-    // Admin routes
-    Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
-    Route::delete('/admin/users/{id}', [AdminController::class, 'deleteUser']);
+    // Breeding pair CRUD operations
+    Route::get('/breeding-pairs', [BreedingPairController::class, 'index']);
+    Route::post('/breeding-pairs', [BreedingPairController::class, 'store']);
+    Route::get('/breeding-pairs/{id}', [BreedingPairController::class, 'show']);
+    Route::put('/breeding-pairs/{id}', [BreedingPairController::class, 'update']);
+    Route::delete('/breeding-pairs/{id}', [BreedingPairController::class, 'destroy']);
     
-    // Bird routes
-    Route::apiResource('birds', BirdController::class);
+    // Genetic computation routes
+    Route::post('/compute/{breedingPairId}', [GeneticComputationController::class, 'computeAndPredict']);
+    Route::get('/computation-result/{breedingPairId}', [GeneticComputationController::class, 'getComputationResult']);
     
-    // Breeding routes
-    Route::post('/breeding/store', [BreedingController::class, 'store']);
-    Route::get('/breeding/pairs', [BreedingController::class, 'getPairs']);
-    Route::get('/breeding/pair/{id}', [BreedingController::class, 'getPair']);
-    Route::put('/breeding/pair/{id}/computation', [BreedingController::class, 'updateComputation']);
-    Route::delete('/breeding/pair/{id}', [BreedingController::class, 'destroy']);
+    // Protected species routes (if you need write operations later)
+    // Route::post('/species', [SpeciesController::class, 'store']);
+    // Route::put('/species/{id}', [SpeciesController::class, 'update']);
+    // Route::delete('/species/{id}', [SpeciesController::class, 'destroy']);
+    
+    // =============================================
+    // ADMIN ONLY ROUTES
+    // =============================================
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/users', [AdminController::class, 'getAllUsers']);
+        Route::delete('/admin/users/{id}', [AdminController::class, 'deleteUser']);
+        
+        // Additional admin routes (if needed)
+        Route::get('/admin/breeding-pairs', [AdminController::class, 'getAllBreedingPairs']);
+        Route::get('/admin/computation-results', [AdminController::class, 'getAllComputationResults']);
+        Route::delete('/admin/breeding-pairs/{id}', [AdminController::class, 'deleteBreedingPair']);
+    });
+});
+
+// =============================================
+// FALLBACK ROUTE (404 handler)
+// =============================================
+
+Route::fallback(function () {
+    return response()->json([
+        'success' => false,
+        'message' => 'API endpoint not found'
+    ], 404);
 });

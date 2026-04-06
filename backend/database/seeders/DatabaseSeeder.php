@@ -1,4 +1,5 @@
 <?php
+// backend/database/seeders/DatabaseSeeder.php
 
 namespace Database\Seeders;
 
@@ -10,6 +11,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
+        // Seed users
         User::create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
@@ -23,5 +25,17 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role' => 'user',
         ]);
+
+        // Call the SpeciesSeeder
+        $this->call(SpeciesSeeder::class);
+        // Call the BaseColorSeeder
+        $this->call(BaseColorSeeder::class);
+        // Call the SplitGeneSeeder
+        $this->call(SplitGeneSeeder::class);
+        // Call the VisualMutationSeeder
+        $this->call(VisualMutationSeeder::class);
+        // Call the SpeciesListSeeder
+        $this->call(SpeciesListSeeder::class);
+        
     }
 }
