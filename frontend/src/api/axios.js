@@ -12,10 +12,19 @@ const axiosInstance = axios.create({
     timeout: 10000,
 });
 
-// Request interceptor
+// ✅ IMPORTANT: Request interceptor to add token to every request
 axiosInstance.interceptors.request.use(
     (config) => {
-        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        // Get token from localStorage (using same key as AuthContext)
+        const token = localStorage.getItem('token');
+        
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log('✅ Token added to request:', config.url);
+        } else {
+            console.log('⚠️ No token found for request:', config.url);
+        }
+        
         return config;
     },
     (error) => {
@@ -24,17 +33,22 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Response interceptor
+// Response interceptor to handle 401 errors
 axiosInstance.interceptors.response.use(
     (response) => {
-        console.log(`API Response: ${response.status} ${response.config.url}`);
+        console.log(`✅ API Response: ${response.status} ${response.config.url}`);
         return response;
     },
     (error) => {
         if (error.code === 'ERR_NETWORK') {
-            console.error('Network Error: Cannot connect to backend. Make sure Laravel is running on port 8000');
+            console.error('❌ Network Error: Cannot connect to backend. Make sure Laravel is running on port 8000');
+        } else if (error.response?.status === 401) {
+            console.error('❌ Unauthorized! Token may be expired. Redirecting to login...');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.dispatchEvent(new CustomEvent('openLogin'));
         } else if (error.response) {
-            console.error(`API Error: ${error.response.status} - ${error.response.statusText}`);
+            console.error(`❌ API Error: ${error.response.status} - ${error.response.statusText}`);
         }
         return Promise.reject(error);
     }

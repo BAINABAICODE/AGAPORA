@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../api/axios';
 
@@ -12,8 +13,11 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
+        
         if (token && storedUser) {
             setUser(JSON.parse(storedUser));
+            // ✅ Set default Authorization header
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
         setLoading(false);
     }, []);
@@ -22,8 +26,14 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.post('/login', { email, password });
             const { token, user } = response.data;
+            
+            // Store token and user
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
+            
+            // ✅ Set default Authorization header for all future requests
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
             setUser(user);
             return { success: true };
         } catch (error) {
@@ -37,8 +47,11 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.post('/register', { name, email, password });
             const { token, user } = response.data;
+            
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
             setUser(user);
             return { success: true };
         } catch (error) {
@@ -56,6 +69,7 @@ export const AuthProvider = ({ children }) => {
         }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        delete api.defaults.headers.common['Authorization'];
         setUser(null);
     };
 
