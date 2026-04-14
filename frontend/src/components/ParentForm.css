@@ -1,5 +1,72 @@
 /* frontend/src/components/ParentForm.css */
 
+.parent-form {
+  background: rgba(16, 77, 100, 0.4); /* Oceanic Teal translucent */
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(236, 121, 61, 0.3);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.parent-form-title {
+  color: #E1CF71; /* Chenin */
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #EC793D; /* Luxury Orange */
+  display: inline-block;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  color: #EED4AD; /* Pine wood */
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-input,
+.form-select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(236, 121, 61, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  color: #EED4AD;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #EC793D;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 5px rgba(236, 121, 61, 0.5);
+}
+
+.form-input::placeholder {
+  color: rgba(225, 207, 113, 0.6);
+}
+
+/* Checkbox groups - base style */
 .checkbox-group {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -8,7 +75,19 @@
   overflow-y: auto;
   padding: 10px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(236, 121, 61, 0.2);
+}
+
+/* Compact checkbox group for nested forms */
+.checkbox-group.compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  max-height: 200px;
+  gap: 6px;
+}
+
+.checkbox-group.compact .checkbox-label {
+  padding: 4px 8px;
 }
 
 .checkbox-label {
@@ -16,48 +95,171 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .checkbox-label:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(236, 121, 61, 0.2);
+  transform: translateX(2px);
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
+  accent-color: #EC793D; /* Luxury Orange */
 }
 
 .checkbox-label span {
-  color: white;
+  color: #EED4AD;
   font-size: 14px;
   font-weight: 500;
 }
 
 .checkbox-label small {
-  color: rgba(255, 255, 255, 0.7);
+  color: #E1CF71;
   font-size: 11px;
+  opacity: 0.8;
 }
 
 /* Scrollbar styling */
 .checkbox-group::-webkit-scrollbar {
   width: 8px;
 }
-
 .checkbox-group::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(236, 121, 61, 0.2);
   border-radius: 4px;
 }
-
 .checkbox-group::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: #EC793D;
   border-radius: 4px;
 }
-
 .checkbox-group::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: #D9471E;
+}
+
+/* Toggle sections (optional genetic data) */
+.toggle-section {
+  margin-top: 20px;
+  border-top: 1px solid rgba(236, 121, 61, 0.4);
+  padding-top: 15px;
+}
+
+.toggle-button {
+  background: transparent;
+  border: none;
+  color: #E1CF71;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s ease;
+}
+
+.toggle-button:hover {
+  color: #EC793D;
+}
+
+.toggle-content {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border-left: 3px solid #EC793D;
+}
+
+/* Genetic bird form styling */
+.genetic-bird-form {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.genetic-bird-form:last-child {
+  margin-bottom: 0;
+}
+
+.genetic-bird-form h5 {
+  color: #E1CF71;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  border-left: 3px solid #EC793D;
+  padding-left: 10px;
+}
+
+.sub-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sub-form-grid h4,
+.sub-form-grid h5 {
+  color: #EED4AD;
+  margin: 15px 0 10px 0;
+}
+
+.sub-form-grid h4:first-child {
+  margin-top: 0;
+}
+
+/* Grandparent grid styling */
+.grandparent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.grandparent-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid rgba(236, 121, 61, 0.3);
+}
+
+.grandparent-card h4 {
+  color: #E1CF71;
+  margin-bottom: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .grandparent-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .checkbox-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .checkbox-group.compact {
+    grid-template-columns: 1fr;
+  }
+  
+  .parent-form {
+    padding: 15px;
+  }
+}
+
+/* Additional responsive adjustments for tablets */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .grandparent-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+  
+  .checkbox-group {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
 }

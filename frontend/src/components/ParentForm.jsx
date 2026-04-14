@@ -22,38 +22,205 @@ const ParentForm = ({
   const handleVisualMutationChange = (mutationName, checked) => {
     const currentMutations = formData.visual_mutations || [];
     let newMutations;
-    
     if (checked) {
       newMutations = [...currentMutations, mutationName];
     } else {
       newMutations = currentMutations.filter(m => m !== mutationName);
     }
-    
     handleInputChange('visual_mutations', newMutations);
   };
 
   const handleSplitGeneChange = (geneName, checked) => {
     const currentGenes = formData.split_genes || [];
     let newGenes;
+    if (checked) {
+      newGenes = [...currentGenes, geneName];
+    } else {
+      newGenes = currentGenes.filter(g => g !== geneName);
+    }
+    handleInputChange('split_genes', newGenes);
+  };
+
+  // Helper for nested genetic data changes
+  const handleGeneticDataChange = (parentType, grandparentSide, individualType, field, value) => {
+    if (parentType === 'parent') {
+      // For mother/father genetic data
+      const currentGenetic = formData.genetic_data || {};
+      const updatedIndividual = {
+        ...(currentGenetic[individualType] || {}),
+        [field]: value
+      };
+      handleInputChange(`genetic_data.${individualType}`, updatedIndividual);
+    } else if (parentType === 'grandparent') {
+      // For grandparents
+      const currentGrandparent = formData.grandparent_data || {};
+      const updatedSide = {
+        ...(currentGrandparent[grandparentSide] || {}),
+        [individualType]: {
+          ...(currentGrandparent[grandparentSide]?.[individualType] || {}),
+          [field]: value
+        }
+      };
+      handleInputChange(`grandparent_data.${grandparentSide}`, updatedSide);
+    }
+  };
+
+  // Helper for nested visual mutations (grandparent)
+  const handleGrandparentVisualMutationChange = (side, individualType, mutationName, checked) => {
+    const currentGrandparent = formData.grandparent_data || {};
+    const currentMutations = currentGrandparent[side]?.[individualType]?.visual_mutations || [];
+    let newMutations;
+    if (checked) {
+      newMutations = [...currentMutations, mutationName];
+    } else {
+      newMutations = currentMutations.filter(m => m !== mutationName);
+    }
     
+    const updatedIndividual = {
+      ...(currentGrandparent[side]?.[individualType] || {}),
+      visual_mutations: newMutations
+    };
+    const updatedSide = {
+      ...(currentGrandparent[side] || {}),
+      [individualType]: updatedIndividual
+    };
+    handleInputChange(`grandparent_data.${side}`, updatedSide);
+  };
+
+  // Helper for nested split genes (grandparent)
+  const handleGrandparentSplitGeneChange = (side, individualType, geneName, checked) => {
+    const currentGrandparent = formData.grandparent_data || {};
+    const currentGenes = currentGrandparent[side]?.[individualType]?.split_genes || [];
+    let newGenes;
     if (checked) {
       newGenes = [...currentGenes, geneName];
     } else {
       newGenes = currentGenes.filter(g => g !== geneName);
     }
     
-    handleInputChange('split_genes', newGenes);
+    const updatedIndividual = {
+      ...(currentGrandparent[side]?.[individualType] || {}),
+      split_genes: newGenes
+    };
+    const updatedSide = {
+      ...(currentGrandparent[side] || {}),
+      [individualType]: updatedIndividual
+    };
+    handleInputChange(`grandparent_data.${side}`, updatedSide);
   };
 
-  // Handle genetic data changes
-  const handleGeneticDataChange = (field, value, type = 'parent') => {
-    if (type === 'genetic') {
-      handleInputChange(`genetic_data.${field}`, value);
-    } else if (type === 'grandparent_paternal') {
-      handleInputChange(`grandparent_data.paternal.${field}`, value);
-    } else if (type === 'grandparent_maternal') {
-      handleInputChange(`grandparent_data.maternal.${field}`, value);
+  // Helper for parent genetic data visual mutations
+  const handleParentGeneticVisualChange = (individualType, mutationName, checked) => {
+    const currentGenetic = formData.genetic_data || {};
+    const currentMutations = currentGenetic[individualType]?.visual_mutations || [];
+    let newMutations;
+    if (checked) {
+      newMutations = [...currentMutations, mutationName];
+    } else {
+      newMutations = currentMutations.filter(m => m !== mutationName);
     }
+    
+    const updatedIndividual = {
+      ...(currentGenetic[individualType] || {}),
+      visual_mutations: newMutations
+    };
+    handleInputChange(`genetic_data.${individualType}`, updatedIndividual);
+  };
+
+  // Helper for parent genetic data split genes
+  const handleParentGeneticSplitChange = (individualType, geneName, checked) => {
+    const currentGenetic = formData.genetic_data || {};
+    const currentGenes = currentGenetic[individualType]?.split_genes || [];
+    let newGenes;
+    if (checked) {
+      newGenes = [...currentGenes, geneName];
+    } else {
+      newGenes = currentGenes.filter(g => g !== geneName);
+    }
+    
+    const updatedIndividual = {
+      ...(currentGenetic[individualType] || {}),
+      split_genes: newGenes
+    };
+    handleInputChange(`genetic_data.${individualType}`, updatedIndividual);
+  };
+
+  // Render genetic info form for a bird (reusable)
+  const renderGeneticBirdForm = (birdType, label, isGrandparent = false, side = null) => {
+    let birdData = {};
+    let onBaseColorChange = (value) => {};
+    let onVisualChange = (mutation, checked) => {};
+    let onSplitChange = (gene, checked) => {};
+
+    if (isGrandparent) {
+      birdData = formData.grandparent_data?.[side]?.[birdType] || {};
+      onBaseColorChange = (value) => handleGeneticDataChange('grandparent', side, birdType, 'base_color', value);
+      onVisualChange = (mutation, checked) => handleGrandparentVisualMutationChange(side, birdType, mutation, checked);
+      onSplitChange = (gene, checked) => handleGrandparentSplitGeneChange(side, birdType, gene, checked);
+    } else {
+      birdData = formData.genetic_data?.[birdType] || {};
+      onBaseColorChange = (value) => handleGeneticDataChange('parent', null, birdType, 'base_color', value);
+      onVisualChange = (mutation, checked) => handleParentGeneticVisualChange(birdType, mutation, checked);
+      onSplitChange = (gene, checked) => handleParentGeneticSplitChange(birdType, gene, checked);
+    }
+
+    return (
+      <div className="genetic-bird-form">
+        <h5>{label}</h5>
+        <div className="form-grid">
+          {/* Base Color */}
+          <div className="form-group">
+            <label>Base Color</label>
+            <select
+              className="form-select"
+              value={birdData.base_color || ''}
+              onChange={(e) => onBaseColorChange(e.target.value)}
+            >
+              <option value="">Select Base Color</option>
+              {baseColors.map((color) => (
+                <option key={color.id} value={color.name}>
+                  {color.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Visual Mutations */}
+          <div className="form-group full-width">
+            <label>Visual Color Mutations</label>
+            <div className="checkbox-group compact">
+              {visualMutations.map((mutation) => (
+                <label key={mutation.id} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={(birdData.visual_mutations || []).includes(mutation.name)}
+                    onChange={(e) => onVisualChange(mutation.name, e.target.checked)}
+                  />
+                  <span>{mutation.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Split Genes */}
+          <div className="form-group full-width">
+            <label>Split / Hidden Genes (Carrier Genes)</label>
+            <div className="checkbox-group compact">
+              {splitGenes.map((gene) => (
+                <label key={gene.id} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={(birdData.split_genes || []).includes(gene.name)}
+                    onChange={(e) => onSplitChange(gene.name, e.target.checked)}
+                  />
+                  <span>{gene.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -130,13 +297,13 @@ const ParentForm = ({
             <option value="">Select Base Color</option>
             {baseColors.map((color) => (
               <option key={color.id} value={color.name}>
-                {color.name} ({color.inheritance})
+                {color.name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Visual Color Mutations - Checkboxes */}
+        {/* Visual Color Mutations */}
         <div className="form-group full-width">
           <label>Visual Color Mutations (Select multiple)</label>
           <div className="checkbox-group">
@@ -148,13 +315,13 @@ const ParentForm = ({
                   onChange={(e) => handleVisualMutationChange(mutation.name, e.target.checked)}
                 />
                 <span>{mutation.name}</span>
-                <small>({mutation.inheritance})</small>
+                {mutation.inheritance && <small>({mutation.inheritance})</small>}
               </label>
             ))}
           </div>
         </div>
 
-        {/* Split / Hidden Genes - Checkboxes */}
+        {/* Split / Hidden Genes */}
         <div className="form-group full-width">
           <label>Split / Hidden Genes (Carrier Genes)</label>
           <div className="checkbox-group">
@@ -166,14 +333,14 @@ const ParentForm = ({
                   onChange={(e) => handleSplitGeneChange(gene.name, e.target.checked)}
                 />
                 <span>{gene.name}</span>
-                <small>({gene.inheritance} - {gene.sex_restriction})</small>
+                {gene.inheritance && <small>({gene.inheritance})</small>}
               </label>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Optional Parent Genetic Data Section */}
+      {/* Optional: Parent Genetic Data (Mother/Father) Section */}
       <div className="toggle-section">
         <button 
           type="button"
@@ -186,87 +353,14 @@ const ParentForm = ({
         {showGeneticData && (
           <div className="toggle-content">
             <div className="sub-form-grid">
-              <h4>Mother's Genetic Information</h4>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Base Color</label>
-                  <select
-                    className="form-select"
-                    value={formData.genetic_data?.mother?.base_color || ''}
-                    onChange={(e) => handleGeneticDataChange('mother.base_color', e.target.value, 'genetic')}
-                  >
-                    <option value="">Select Base Color</option>
-                    {baseColors.map((color) => (
-                      <option key={color.id} value={color.name}>{color.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Mutation Type</label>
-                  <input type="text" className="form-input" placeholder="e.g., Lutino, Pied"
-                    value={formData.genetic_data?.mother?.mutation_type || ''}
-                    onChange={(e) => handleGeneticDataChange('mother.mutation_type', e.target.value, 'genetic')}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Visual Traits</label>
-                  <input type="text" className="form-input" placeholder="Visual characteristics"
-                    value={formData.genetic_data?.mother?.visual_traits || ''}
-                    onChange={(e) => handleGeneticDataChange('mother.visual_traits', e.target.value, 'genetic')}
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label>Split / Hidden Genes</label>
-                  <input type="text" className="form-input" placeholder="e.g., split to Blue, split to Pied"
-                    value={formData.genetic_data?.mother?.split_genes || ''}
-                    onChange={(e) => handleGeneticDataChange('mother.split_genes', e.target.value, 'genetic')}
-                  />
-                </div>
-              </div>
-
-              <h4>Father's Genetic Information</h4>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Base Color</label>
-                  <select
-                    className="form-select"
-                    value={formData.genetic_data?.father?.base_color || ''}
-                    onChange={(e) => handleGeneticDataChange('father.base_color', e.target.value, 'genetic')}
-                  >
-                    <option value="">Select Base Color</option>
-                    {baseColors.map((color) => (
-                      <option key={color.id} value={color.name}>{color.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Mutation Type</label>
-                  <input type="text" className="form-input" placeholder="e.g., Lutino, Pied"
-                    value={formData.genetic_data?.father?.mutation_type || ''}
-                    onChange={(e) => handleGeneticDataChange('father.mutation_type', e.target.value, 'genetic')}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Visual Traits</label>
-                  <input type="text" className="form-input" placeholder="Visual characteristics"
-                    value={formData.genetic_data?.father?.visual_traits || ''}
-                    onChange={(e) => handleGeneticDataChange('father.visual_traits', e.target.value, 'genetic')}
-                  />
-                </div>
-                <div className="form-group full-width">
-                  <label>Split / Hidden Genes</label>
-                  <input type="text" className="form-input" placeholder="e.g., split to Blue, split to Pied"
-                    value={formData.genetic_data?.father?.split_genes || ''}
-                    onChange={(e) => handleGeneticDataChange('father.split_genes', e.target.value, 'genetic')}
-                  />
-                </div>
-              </div>
+              {renderGeneticBirdForm('mother', 'Mother\'s Genetic Information', false)}
+              {renderGeneticBirdForm('father', 'Father\'s Genetic Information', false)}
             </div>
           </div>
         )}
       </div>
 
-      {/* Optional Grandparent Data Section */}
+      {/* Optional: Grandparent Data Section */}
       <div className="toggle-section">
         <button 
           type="button"
@@ -282,91 +376,15 @@ const ParentForm = ({
               {/* Paternal Grandparents */}
               <div className="grandparent-card">
                 <h4>Paternal Grandparents (Father's side)</h4>
-                <div className="sub-form-grid">
-                  <h5>Paternal Grandfather</h5>
-                  <div className="form-grid">
-                    <div className="form-group"><label>Base Color</label><input type="text" className="form-input" placeholder="e.g., Green, Blue"
-                      value={formData.grandparent_data?.paternal?.grandfather?.base_color || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandfather.base_color', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                    <div className="form-group"><label>Mutation Type</label><input type="text" className="form-input" placeholder="e.g., Lutino"
-                      value={formData.grandparent_data?.paternal?.grandfather?.mutation_type || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandfather.mutation_type', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                    <div className="form-group"><label>Visual Traits</label><input type="text" className="form-input" placeholder="Visual characteristics"
-                      value={formData.grandparent_data?.paternal?.grandfather?.visual_traits || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandfather.visual_traits', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                    <div className="form-group"><label>Split Genes</label><input type="text" className="form-input" placeholder="Carrier genes"
-                      value={formData.grandparent_data?.paternal?.grandfather?.split_genes || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandfather.split_genes', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                  </div>
-                  <h5>Paternal Grandmother</h5>
-                  <div className="form-grid">
-                    <div className="form-group"><label>Base Color</label><input type="text" className="form-input" placeholder="e.g., Green, Blue"
-                      value={formData.grandparent_data?.paternal?.grandmother?.base_color || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandmother.base_color', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                    <div className="form-group"><label>Mutation Type</label><input type="text" className="form-input" placeholder="e.g., Lutino"
-                      value={formData.grandparent_data?.paternal?.grandmother?.mutation_type || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandmother.mutation_type', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                    <div className="form-group"><label>Visual Traits</label><input type="text" className="form-input" placeholder="Visual characteristics"
-                      value={formData.grandparent_data?.paternal?.grandmother?.visual_traits || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandmother.visual_traits', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                    <div className="form-group"><label>Split Genes</label><input type="text" className="form-input" placeholder="Carrier genes"
-                      value={formData.grandparent_data?.paternal?.grandmother?.split_genes || ''}
-                      onChange={(e) => handleGeneticDataChange('paternal.grandmother.split_genes', e.target.value, 'grandparent_paternal')}
-                    /></div>
-                  </div>
-                </div>
+                {renderGeneticBirdForm('grandfather', 'Paternal Grandfather', true, 'paternal')}
+                {renderGeneticBirdForm('grandmother', 'Paternal Grandmother', true, 'paternal')}
               </div>
 
               {/* Maternal Grandparents */}
               <div className="grandparent-card">
                 <h4>Maternal Grandparents (Mother's side)</h4>
-                <div className="sub-form-grid">
-                  <h5>Maternal Grandfather</h5>
-                  <div className="form-grid">
-                    <div className="form-group"><label>Base Color</label><input type="text" className="form-input" placeholder="e.g., Green, Blue"
-                      value={formData.grandparent_data?.maternal?.grandfather?.base_color || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandfather.base_color', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                    <div className="form-group"><label>Mutation Type</label><input type="text" className="form-input" placeholder="e.g., Lutino"
-                      value={formData.grandparent_data?.maternal?.grandfather?.mutation_type || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandfather.mutation_type', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                    <div className="form-group"><label>Visual Traits</label><input type="text" className="form-input" placeholder="Visual characteristics"
-                      value={formData.grandparent_data?.maternal?.grandfather?.visual_traits || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandfather.visual_traits', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                    <div className="form-group"><label>Split Genes</label><input type="text" className="form-input" placeholder="Carrier genes"
-                      value={formData.grandparent_data?.maternal?.grandfather?.split_genes || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandfather.split_genes', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                  </div>
-                  <h5>Maternal Grandmother</h5>
-                  <div className="form-grid">
-                    <div className="form-group"><label>Base Color</label><input type="text" className="form-input" placeholder="e.g., Green, Blue"
-                      value={formData.grandparent_data?.maternal?.grandmother?.base_color || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandmother.base_color', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                    <div className="form-group"><label>Mutation Type</label><input type="text" className="form-input" placeholder="e.g., Lutino"
-                      value={formData.grandparent_data?.maternal?.grandmother?.mutation_type || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandmother.mutation_type', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                    <div className="form-group"><label>Visual Traits</label><input type="text" className="form-input" placeholder="Visual characteristics"
-                      value={formData.grandparent_data?.maternal?.grandmother?.visual_traits || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandmother.visual_traits', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                    <div className="form-group"><label>Split Genes</label><input type="text" className="form-input" placeholder="Carrier genes"
-                      value={formData.grandparent_data?.maternal?.grandmother?.split_genes || ''}
-                      onChange={(e) => handleGeneticDataChange('maternal.grandmother.split_genes', e.target.value, 'grandparent_maternal')}
-                    /></div>
-                  </div>
-                </div>
+                {renderGeneticBirdForm('grandfather', 'Maternal Grandfather', true, 'maternal')}
+                {renderGeneticBirdForm('grandmother', 'Maternal Grandmother', true, 'maternal')}
               </div>
             </div>
           </div>

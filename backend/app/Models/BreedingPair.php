@@ -18,7 +18,7 @@ class BreedingPair extends Model
         'parent1_sex',
         'parent1_age',
         'parent1_base_color',
-        'parent1_visual_mutation',
+        'parent1_visual_mutations',  // Changed from singular to plural to match frontend
         'parent1_split_genes',
         'parent2_bird_id',
         'parent2_name',
@@ -26,7 +26,7 @@ class BreedingPair extends Model
         'parent2_sex',
         'parent2_age',
         'parent2_base_color',
-        'parent2_visual_mutation',
+        'parent2_visual_mutations',  // Changed from singular to plural to match frontend
         'parent2_split_genes',
         'parent1_genetic_data',
         'parent2_genetic_data',
@@ -36,7 +36,9 @@ class BreedingPair extends Model
     ];
 
     protected $casts = [
+        'parent1_visual_mutations' => 'array',  // Added array cast for mutations
         'parent1_split_genes' => 'array',
+        'parent2_visual_mutations' => 'array',  // Added array cast for mutations
         'parent2_split_genes' => 'array',
         'parent1_genetic_data' => 'array',
         'parent2_genetic_data' => 'array',
@@ -46,5 +48,10 @@ class BreedingPair extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    
+    public function computationResult()
+    {
+        return $this->hasOne(ComputationResult::class);
     }
 }

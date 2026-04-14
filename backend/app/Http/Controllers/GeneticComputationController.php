@@ -1,5 +1,23 @@
 <?php
-// backend/app/Http/Controllers/GeneticComputationController.php
+// =============================================================
+// FILE: backend/app/Http/Controllers/GeneticComputationController.php
+//       (REPLACE the existing file)
+//
+// WHAT CHANGED FROM ORIGINAL:
+//   BEFORE: This controller computed genetics itself (PHP logic).
+//   AFTER:  All computation is done on the FRONTEND (JavaScript).
+//           This controller now only:
+//             1. Receives pre-computed results from the frontend
+//             2. Validates them
+//             3. Saves them to the database
+//             4. Returns the stored result when requested
+//
+// API ROUTES (unchanged in api.php):
+//   POST /compute/{breedingPairId}
+//     → Receive & store pre-computed results from frontend
+//   GET  /computation-result/{breedingPairId}
+//     → Return stored result with breeding pair data attached
+// =============================================================
 
 namespace App\Http\Controllers;
 
@@ -10,257 +28,179 @@ use Illuminate\Support\Facades\Auth;
 
 class GeneticComputationController extends Controller
 {
-    public function computeAndPredict($breedingPairId)
+    /**
+     * Receive pre-computed genetic results from the frontend and store them.
+     *
+     * The frontend (GeneticComputationEngine.js) sends:
+     * {
+     *   "chicks_data": [
+     *     {
+     *       "chick_number":     1,
+     *       "sex":              "Male",
+     *       "base_color":       "Cobalt",
+     *       "visual_mutations": ["Lutino"],
+     *       "split_genes":      ["Pied"],
+     *       "genetic_makeup":   "Cobalt Lutino / split: Pied",
+     *       "fitness_score":    0.72
+     *     },
+     *     ... (6 total)
+     *   ],
+     *   "genetic_analysis": {
+     *     "parent1": { ... encoded alleles, species, etc. },
+     *     "parent2": { ... },
+     *     "algorithm": { ... steps performed, generations, etc. },
+     *     "inheritance_rules": { ... },
+     *     "verification": { ... }
+     *   },
+     *   "probabilities": {
+     *     "base_colors":  { "Cobalt": 33.3, "Blue": 16.7, ... },
+     *     "sex":          { "Male": 50.0, "Female": 50.0 },
+     *     "mutations":    { "Lutino": 25.0 },
+     *     "split_genes":  { "Pied": 30.0 }
+     *   },
+     *   "verification": {
+     *     "method": "Traditional Punnett Square + Fuzzy Logic Inference",
+     *     "base_color_probabilities": { ... },
+     *     "mutation_probabilities":   { ... },
+     *     "split_probabilities":      { ... },
+     *     "confidence_score":         80
+     *   }
+     * }
+     *
+     * @param Request $request
+     * @param int     $breedingPairId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function computeAndPredict(Request $request, $breedingPairId)
     {
         try {
+            // ── 1. Verify breeding pair belongs to this user ─────────────
             $breedingPair = BreedingPair::where('user_id', Auth::id())
                 ->findOrFail($breedingPairId);
-            
-            // Generate 6 unique chicks based on parent genetics
-            $offspring = $this->generateOffspring($breedingPair);
-            
-            // Calculate probabilities
-            $probabilities = $this->calculateProbabilities($offspring);
-            
-            // Prepare genetic analysis
-            $geneticAnalysis = $this->prepareGeneticAnalysis($breedingPair);
-            
-            // Store results
+
+            // ── 2. Validate the incoming pre-computed payload ────────────
+            $validated = $request->validate([
+                // 6 chicks array — required
+                'chicks_data'                         => 'required|array|min:1|max:10',
+                'chicks_data.*.sex'                   => 'required|in:Male,Female',
+                'chicks_data.*.base_color'            => 'required|string|max:100',
+                'chicks_data.*.visual_mutations'      => 'present|array',
+                'chicks_data.*.visual_mutations.*'    => 'string|max:100',
+                'chicks_data.*.split_genes'           => 'present|array',
+                'chicks_data.*.split_genes.*'         => 'string|max:100',
+                'chicks_data.*.genetic_makeup'        => 'required|string|max:500',
+
+                // Analysis object — required
+                'genetic_analysis'                    => 'required|array',
+
+                // Probabilities — required
+                'probabilities'                       => 'required|array',
+                'probabilities.base_colors'           => 'required|array',
+                'probabilities.sex'                   => 'required|array',
+
+                // Verification — optional but stored if present
+                'verification'                        => 'nullable|array',
+            ]);
+
+            // ── 3. Merge verification into genetic_analysis ──────────────
+            // We store verification inside genetic_analysis so everything
+            // is in one JSON column for easy retrieval.
+            $geneticAnalysis = $validated['genetic_analysis'];
+            if (!empty($validated['verification'])) {
+                $geneticAnalysis['verification'] = $validated['verification'];
+            }
+
+            // ── 4. Upsert the computation result ─────────────────────────
+            // If a result already exists for this breeding pair, update it.
+            // Otherwise create a new record.
             $computationResult = ComputationResult::updateOrCreate(
-                ['breeding_pair_id' => $breedingPairId],
                 [
-                    'user_id' => Auth::id(),
-                    'chicks_data' => $offspring,
+                    'breeding_pair_id' => (int) $breedingPairId,
+                ],
+                [
+                    'user_id'          => Auth::id(),
+                    'chicks_data'      => $validated['chicks_data'],
                     'genetic_analysis' => $geneticAnalysis,
-                    'probabilities' => $probabilities
+                    'probabilities'    => $validated['probabilities'],
                 ]
             );
-            
-            // Update breeding pair status
+
+            // ── 5. Mark the breeding pair as completed ───────────────────
             $breedingPair->update([
-                'computation_results' => $offspring,
-                'status' => 'completed'
+                'computation_results' => $validated['chicks_data'],
+                'status'              => 'completed',
             ]);
-            
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'chicks' => $offspring,
-                    'probabilities' => $probabilities,
-                    'analysis' => $geneticAnalysis
-                ]
-            ]);
+                'message' => 'Genetic computation results stored successfully.',
+                'data'    => [
+                    'computation_result_id' => $computationResult->id,
+                    'breeding_pair_id'      => (int) $breedingPairId,
+                    'chicks_count'          => count($validated['chicks_data']),
+                    'status'                => 'completed',
+                ],
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed — the computation data sent from the frontend is invalid.',
+                'errors'  => $e->errors(),
+            ], 422);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Breeding pair not found or does not belong to your account.',
+            ], 404);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Computation failed: ' . $e->getMessage()
+                'message' => 'Failed to store computation results: ' . $e->getMessage(),
             ], 500);
         }
     }
-    
-    private function generateOffspring($breedingPair)
-    {
-        $offspring = [];
-        $possibleColors = $this->getPossibleBaseColors($breedingPair);
-        $possibleMutations = $this->getPossibleMutations($breedingPair);
-        
-        for ($i = 0; $i < 6; $i++) {
-            // Select base color with probability
-            $baseColor = $this->selectWithProbability($possibleColors);
-            
-            // Select mutations that appear
-            $selectedMutations = [];
-            foreach ($possibleMutations as $mutation => $probability) {
-                if (rand(1, 100) <= $probability) {
-                    $selectedMutations[] = $mutation;
-                }
-            }
-            
-            // Select split genes (random 0-3 from parents)
-            $allSplits = array_merge(
-                $breedingPair->parent1_split_genes ?? [],
-                $breedingPair->parent2_split_genes ?? []
-            );
-            shuffle($allSplits);
-            $selectedSplits = array_slice($allSplits, 0, rand(0, 3));
-            
-            // Random sex
-            $sex = rand(0, 1) ? 'Male' : 'Female';
-            
-            $offspring[] = [
-                'chick_number' => $i + 1,
-                'sex' => $sex,
-                'base_color' => $baseColor,
-                'visual_mutations' => array_unique($selectedMutations),
-                'split_genes' => array_unique($selectedSplits),
-                'genetic_makeup' => $this->generateGeneticMakeup($baseColor, $selectedMutations, $selectedSplits)
-            ];
-        }
-        
-        return $offspring;
-    }
-    
-    private function getPossibleBaseColors($breedingPair)
-    {
-        $color1 = $breedingPair->parent1_base_color;
-        $color2 = $breedingPair->parent2_base_color;
-        
-        // Punnett square results
-        $combinations = [];
-        
-        // Green series
-        if ($color1 === 'Green' && $color2 === 'Green') {
-            $combinations = ['Green' => 100];
-        } elseif ($color1 === 'Green' && $color2 === 'Blue') {
-            $combinations = ['Green' => 100];
-        } elseif ($color1 === 'Blue' && $color2 === 'Blue') {
-            $combinations = ['Blue' => 100];
-        } elseif ($color1 === 'Green' && $color2 === 'Dark Green') {
-            $combinations = ['Green' => 50, 'Dark Green' => 50];
-        } elseif ($color1 === 'Dark Green' && $color2 === 'Dark Green') {
-            $combinations = ['Green' => 25, 'Dark Green' => 50, 'Olive' => 25];
-        } else {
-            $combinations = [$color1 => 100];
-        }
-        
-        return $combinations;
-    }
-    
-    private function getPossibleMutations($breedingPair)
-    {
-        $mutations = [];
-        $parent1Visuals = $breedingPair->parent1_visual_mutations ?? [];
-        $parent2Visuals = $breedingPair->parent2_visual_mutations ?? [];
-        
-        $allVisuals = array_unique(array_merge($parent1Visuals, $parent2Visuals));
-        
-        foreach ($allVisuals as $mutation) {
-            $parent1Has = in_array($mutation, $parent1Visuals);
-            $parent2Has = in_array($mutation, $parent2Visuals);
-            
-            if ($parent1Has && $parent2Has) {
-                $mutations[$mutation] = 75; // Both parents visual
-            } elseif ($parent1Has || $parent2Has) {
-                $mutations[$mutation] = 50; // One parent visual
-            }
-        }
-        
-        return $mutations;
-    }
-    
-    private function selectWithProbability($options)
-    {
-        $rand = rand(1, 100);
-        $cumulative = 0;
-        
-        foreach ($options as $option => $probability) {
-            $cumulative += $probability;
-            if ($rand <= $cumulative) {
-                return $option;
-            }
-        }
-        
-        return array_key_first($options);
-    }
-    
-    private function generateGeneticMakeup($baseColor, $visualMutations, $splitGenes)
-    {
-        $makeup = $baseColor;
-        
-        if (!empty($visualMutations)) {
-            $makeup .= ' + ' . implode(', ', $visualMutations);
-        }
-        
-        if (!empty($splitGenes)) {
-            $makeup .= ' / ' . implode(', ', $splitGenes);
-        }
-        
-        return $makeup;
-    }
-    
-    private function calculateProbabilities($offspring)
-    {
-        $total = count($offspring);
-        $probabilities = [];
-        
-        // Base color probabilities
-        $baseColors = [];
-        foreach ($offspring as $chick) {
-            $color = $chick['base_color'];
-            $baseColors[$color] = ($baseColors[$color] ?? 0) + 1;
-        }
-        
-        foreach ($baseColors as $color => $count) {
-            $probabilities['base_colors'][$color] = round(($count / $total) * 100, 1);
-        }
-        
-        // Sex probabilities
-        $males = count(array_filter($offspring, fn($c) => $c['sex'] === 'Male'));
-        $probabilities['sex'] = [
-            'Male' => round(($males / $total) * 100, 1),
-            'Female' => round((($total - $males) / $total) * 100, 1)
-        ];
-        
-        // Mutation probabilities
-        $mutations = [];
-        foreach ($offspring as $chick) {
-            foreach ($chick['visual_mutations'] as $mutation) {
-                $mutations[$mutation] = ($mutations[$mutation] ?? 0) + 1;
-            }
-        }
-        
-        foreach ($mutations as $mutation => $count) {
-            $probabilities['mutations'][$mutation] = round(($count / $total) * 100, 1);
-        }
-        
-        return $probabilities;
-    }
-    
-    private function prepareGeneticAnalysis($breedingPair)
-    {
-        return [
-            'parent1' => [
-                'species' => $breedingPair->parent1_species,
-                'sex' => $breedingPair->parent1_sex,
-                'base_color' => $breedingPair->parent1_base_color,
-                'visual_mutations' => $breedingPair->parent1_visual_mutations ?? [],
-                'split_genes' => $breedingPair->parent1_split_genes ?? []
-            ],
-            'parent2' => [
-                'species' => $breedingPair->parent2_species,
-                'sex' => $breedingPair->parent2_sex,
-                'base_color' => $breedingPair->parent2_base_color,
-                'visual_mutations' => $breedingPair->parent2_visual_mutations ?? [],
-                'split_genes' => $breedingPair->parent2_split_genes ?? []
-            ],
-            'inheritance_rules' => [
-                'base_color' => 'Autosomal',
-                'visual_mutations' => 'Various (Dominant/Recessive/Sex-linked)',
-                'split_genes' => 'Recessive carriers'
-            ]
-        ];
-    }
-    
+
+    /**
+     * Retrieve the stored computation result for a breeding pair.
+     *
+     * GET /computation-result/{breedingPairId}
+     *
+     * Returns the computation result with the breeding pair data
+     * attached so the ComputationResult.jsx page can show parent info.
+     *
+     * @param int $breedingPairId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getComputationResult($breedingPairId)
     {
-        $result = ComputationResult::where('breeding_pair_id', $breedingPairId)
-            ->where('user_id', Auth::id())
-            ->first();
-        
-        if (!$result) {
+        try {
+            $result = ComputationResult::where('breeding_pair_id', (int) $breedingPairId)
+                ->where('user_id', Auth::id())
+                ->first();
+
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No computation result found for this breeding pair. Please run the computation first.',
+                ], 404);
+            }
+
+            // Attach the breeding pair so the frontend can display parent info
+            $result->breeding_pair = BreedingPair::find($breedingPairId);
+
+            return response()->json([
+                'success' => true,
+                'data'    => $result,
+            ], 200);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'No computation result found'
-            ], 404);
+                'message' => 'Failed to retrieve computation result: ' . $e->getMessage(),
+            ], 500);
         }
-        
-        // Load breeding pair data
-        $breedingPair = BreedingPair::find($breedingPairId);
-        $result->breeding_pair = $breedingPair;
-        
-        return response()->json([
-            'success' => true,
-            'data' => $result
-        ]);
     }
 }
