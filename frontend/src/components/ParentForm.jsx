@@ -225,8 +225,11 @@ const ParentForm = ({
 
   return (
     <div className="parent-form">
-      <h3 className="parent-form-title">{title}</h3>
-      
+      <div className="parent-status-bar">
+        <span className="status-pulse-dot" aria-hidden="true" />
+        <span className="status-text">{title} • Data Entry Active</span>
+      </div>
+
       <div className="form-grid">
         {/* Bird ID / Name */}
         <div className="form-group">

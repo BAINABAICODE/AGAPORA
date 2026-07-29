@@ -42,14 +42,18 @@ const AdminDashboard = () => {
   }
 
   if (error) {
-    return <div className="admin-error">{error}</div>;
+    return (
+      <div className="admin-container">
+        <div className="admin-content admin-error-card">{error}</div>
+      </div>
+    );
   }
 
   return (
     <div className="admin-container">
       <div className="admin-content">
         <h1>Admin Dashboard</h1>
-        <p>Total Users: {users.length}</p>
+        <p className="admin-meta">Total Users: {users.length}</p>
         <div className="users-table-container">
           <table className="users-table">
             <thead>
@@ -64,11 +68,11 @@ const AdminDashboard = () => {
             <tbody>
               {users.map(user => (
                 <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>
+                  <td data-label="ID">{user.id}</td>
+                  <td data-label="Name">{user.name}</td>
+                  <td data-label="Email">{user.email}</td>
+                  <td data-label="Role">{user.role}</td>
+                  <td data-label="Actions">
                     {user.role !== 'admin' && (
                       <button
                         onClick={() => handleDeleteUser(user.id)}

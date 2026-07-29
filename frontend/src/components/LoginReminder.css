@@ -1,90 +1,136 @@
+/* frontend/src/components/LoginReminder.css — mobile-first */
+
 .reminder-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(0.25rem);
+  backdrop-filter: blur(0.25rem);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
   z-index: 2000;
-  animation: fadeIn 0.3s ease-out;
+  animation: reminderFadeIn 0.25s ease-out;
+  padding: 0;
 }
 
 .reminder-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: clamp(1.5rem, 4vw, 2rem);
+  max-width: 25rem;
+  width: 100%;
   text-align: center;
   position: relative;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-  animation: slideUp 0.3s ease-out;
+  box-shadow: var(--shadow-lg);
+  animation: reminderSlideUp 0.3s ease-out;
 }
 
 .reminder-close {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  top: 0.75rem;
+  right: 1rem;
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 1.5rem;
   cursor: pointer;
-  color: #999;
-  transition: color 0.2s;
+  color: var(--color-text-soft);
+  transition: color var(--duration) var(--ease);
 }
+
 .reminder-close:hover {
-  color: #333;
+  color: var(--color-text);
 }
 
 .reminder-card h3 {
-  margin-top: 0;
-  color: #1a1a2e;
-  font-size: 1.5rem;
+  margin: 0.5rem 0 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
 }
 
 .reminder-card p {
-  color: #555;
-  margin: 1rem 0;
+  color: var(--color-text-muted);
+  margin: var(--space-4) 0;
+  line-height: 1.55;
+  font-size: var(--text-sm);
 }
 
 .reminder-buttons {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 
-.reminder-login, .reminder-signup {
-  padding: 0.6rem 1.5rem;
-  border: none;
-  border-radius: 30px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-.reminder-login {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-}
+.reminder-login,
 .reminder-signup {
-  background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
-}
-.reminder-login:hover, .reminder-signup:hover {
-  transform: translateY(-2px);
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: transform var(--duration) var(--ease);
+  font-family: inherit;
+  font-weight: 600;
+  width: 100%;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.reminder-login {
+  background: linear-gradient(135deg, var(--color-primary), #7a9e2e);
+  color: var(--color-on-primary);
 }
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+
+.reminder-signup {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+
+.reminder-login:hover,
+.reminder-signup:hover {
+  transform: translateY(-0.1rem);
+}
+
+@keyframes reminderFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reminderSlideUp {
+  from {
+    transform: translateY(1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 480px) {
+  .reminder-overlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+
+  .reminder-card {
+    border-radius: var(--radius-xl);
+    width: 90%;
+  }
+
+  .reminder-buttons {
+    flex-direction: row;
+  }
+
+  .reminder-login,
+  .reminder-signup {
+    width: auto;
+    flex: 1;
+  }
 }

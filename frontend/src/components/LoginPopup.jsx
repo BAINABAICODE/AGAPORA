@@ -65,9 +65,9 @@ const LoginPopup = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="login-popup modal-overlay" onClick={handleClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-btn" onClick={handleClose}>×</button>
+        <button type="button" className="close-btn" onClick={handleClose}>×</button>
         
         {mode === 'login' && (
           <>

@@ -1,116 +1,159 @@
-.modal-overlay {
+/* frontend/src/components/LoginPopup.css — scoped to .login-popup */
+
+.login-popup.modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(0.35rem);
+  backdrop-filter: blur(0.35rem);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
   z-index: 2000;
-  animation: fadeIn 0.3s ease-out;
+  animation: loginFadeIn 0.25s ease-out;
+  padding: 0;
 }
 
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 24px;
-  width: 90%;
-  max-width: 420px;
+.login-popup .modal-content {
+  background: var(--color-surface);
+  padding: clamp(1.5rem, 4vw, 2rem);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%;
+  max-width: 26rem;
   position: relative;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-  animation: slideUp 0.3s ease-out;
+  box-shadow: var(--shadow-lg);
+  animation: loginSlideUp 0.3s ease-out;
+  max-height: 92dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.close-btn {
+.login-popup .close-btn {
   position: absolute;
-  top: 16px;
-  right: 20px;
+  top: 0.85rem;
+  right: 1rem;
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: 1.75rem;
+  line-height: 1;
   cursor: pointer;
-  color: #aaa;
-  transition: color 0.2s;
-}
-.close-btn:hover {
-  color: #333;
+  color: var(--color-text-soft);
+  transition: color var(--duration) var(--ease);
+  padding: 0.25rem;
 }
 
-.modal-content h2 {
-  margin-bottom: 1.5rem;
-  color: #1a1a2e;
+.login-popup .close-btn:hover {
+  color: var(--color-text);
+}
+
+.login-popup .modal-content h2 {
+  margin: 0 0 var(--space-6);
+  color: var(--color-text);
   text-align: center;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 3vw, 1.6rem);
+  padding-right: 1.5rem;
 }
 
-.modal-content input {
+.login-popup .modal-content input {
   width: 100%;
   padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  transition: border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
   box-sizing: border-box;
-}
-.modal-content input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
 }
 
-.submit-btn {
+.login-popup .modal-content input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.login-popup .submit-btn {
   width: 100%;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, var(--color-primary), #7a9e2e);
+  color: var(--color-on-primary);
   border: none;
-  border-radius: 40px;
-  font-size: 1rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-top: 0.5rem;
-}
-.submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  transition: transform var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+  margin-top: 0.35rem;
 }
 
-.error {
-  color: #e74c3c;
-  font-size: 0.75rem;
-  margin-top: -0.5rem;
+.login-popup .submit-btn:hover {
+  transform: translateY(-0.1rem);
+  box-shadow: 0 0.5rem 1.25rem rgba(95, 127, 31, 0.3);
+}
+
+.login-popup .error {
+  color: var(--color-danger);
+  font-size: var(--text-xs);
+  margin-top: -0.35rem;
   margin-bottom: 0.75rem;
   display: block;
 }
 
-.toggle-mode {
+.login-popup .toggle-mode {
   text-align: center;
-  margin-top: 1rem;
-  font-size: 0.9rem;
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
-.toggle-mode button {
+
+.login-popup .toggle-mode button {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--color-primary);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
+  font-family: inherit;
+  font-size: inherit;
 }
-.toggle-mode button:hover {
+
+.login-popup .toggle-mode button:hover {
   text-decoration: underline;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+
+@keyframes loginSlideUp {
+  from {
+    transform: translateY(1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 480px) {
+  .login-popup.modal-overlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+
+  .login-popup .modal-content {
+    border-radius: var(--radius-xl);
+    width: 90%;
+  }
 }

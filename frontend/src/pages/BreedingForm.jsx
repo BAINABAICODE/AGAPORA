@@ -1,5 +1,5 @@
 // frontend/src/pages/BreedingForm.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import ParentForm from '../components/ParentForm';
@@ -16,6 +16,17 @@ const setNestedValue = (obj, path, value) => {
   }, obj);
   target[lastKey] = value;
   return obj;
+};
+
+const getParentCompletion = (parent) => {
+  const required = ['species', 'sex', 'base_color'];
+  const filled = required.filter((field) => Boolean(parent[field])).length;
+  return {
+    filled,
+    total: required.length,
+    percent: Math.round((filled / required.length) * 100),
+    isComplete: filled === required.length,
+  };
 };
 
 const BreedingForm = () => {
@@ -50,6 +61,10 @@ const BreedingForm = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [computeLog, setComputeLog] = useState([]);
+  const [activeParent, setActiveParent] = useState(1);
+
+  const parent1Ref = useRef(null);
+  const parent2Ref = useRef(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -203,6 +218,23 @@ const BreedingForm = () => {
     }
   };
 
+  const parent1Progress = getParentCompletion(parent1);
+  const parent2Progress = getParentCompletion(parent2);
+  const bothParentsComplete = parent1Progress.isComplete && parent2Progress.isComplete;
+
+  const getStepStatus = (progress, isActive) => {
+    if (progress.isComplete) return 'Complete';
+    if (isActive) return 'Data Entry Active';
+    if (progress.filled > 0) return 'In Progress';
+    return 'Not Started';
+  };
+
+  const handleStepClick = (parentNumber) => {
+    setActiveParent(parentNumber);
+    const targetRef = parentNumber === 1 ? parent1Ref : parent2Ref;
+    targetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   if (loading) {
     return (
       <div className="breeding-form loading-container">
@@ -215,6 +247,67 @@ const BreedingForm = () => {
   return (
     <div className="breeding-form">
       <div className="breeding-form-container">
+        <div className="form-progress-bar" role="navigation" aria-label="Form progress">
+          <div className="progress-bar-header">
+            <span className="progress-pulse-dot" aria-hidden="true" />
+            <span className="progress-current-label">
+              Currently answering: <strong>Parent {activeParent}</strong>
+            </span>
+          </div>
+
+          <div className="progress-steps">
+            <button
+              type="button"
+              className={`progress-step ${activeParent === 1 ? 'active' : ''} ${parent1Progress.isComplete ? 'complete' : ''}`}
+              onClick={() => handleStepClick(1)}
+              aria-current={activeParent === 1 ? 'step' : undefined}
+            >
+              <span className="step-indicator">
+                {parent1Progress.isComplete ? '✓' : '1'}
+              </span>
+              <span className="step-content">
+                <span className="step-title">Parent 1</span>
+                <span className="step-status">{getStepStatus(parent1Progress, activeParent === 1)}</span>
+                <span className="step-progress-track" aria-hidden="true">
+                  <span className="step-progress-fill" style={{ width: `${parent1Progress.percent}%` }} />
+                </span>
+              </span>
+            </button>
+
+            <div className={`progress-connector ${parent1Progress.isComplete ? 'complete' : ''}`} aria-hidden="true" />
+
+            <button
+              type="button"
+              className={`progress-step ${activeParent === 2 ? 'active' : ''} ${parent2Progress.isComplete ? 'complete' : ''}`}
+              onClick={() => handleStepClick(2)}
+              aria-current={activeParent === 2 ? 'step' : undefined}
+            >
+              <span className="step-indicator">
+                {parent2Progress.isComplete ? '✓' : '2'}
+              </span>
+              <span className="step-content">
+                <span className="step-title">Parent 2</span>
+                <span className="step-status">{getStepStatus(parent2Progress, activeParent === 2)}</span>
+                <span className="step-progress-track" aria-hidden="true">
+                  <span className="step-progress-fill" style={{ width: `${parent2Progress.percent}%` }} />
+                </span>
+              </span>
+            </button>
+
+            <div className={`progress-connector ${bothParentsComplete ? 'complete' : ''}`} aria-hidden="true" />
+
+            <div className={`progress-step review-step ${bothParentsComplete ? 'ready' : ''}`}>
+              <span className="step-indicator">3</span>
+              <span className="step-content">
+                <span className="step-title">Review &amp; Compute</span>
+                <span className="step-status">
+                  {bothParentsComplete ? 'Ready' : 'Awaiting parent data'}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
         <h1 className="form-main-title">Genetic Data Collection for Prediction</h1>
         <p className="form-description">
           Enter genetic information for both parent birds to predict offspring traits.
@@ -242,26 +335,38 @@ const BreedingForm = () => {
 
         <form onSubmit={handleSubmitAndCompute}>
           <div className="parent-forms-row">
-            <ParentForm
-              title="Parent 1"
-              parentNumber={1}
-              formData={parent1}
-              onChange={handleParentChange}
-              speciesList={references.species}
-              baseColors={references.base_colors}
-              visualMutations={references.visual_mutations}
-              splitGenes={references.split_genes}
-            />
-            <ParentForm
-              title="Parent 2"
-              parentNumber={2}
-              formData={parent2}
-              onChange={handleParentChange}
-              speciesList={references.species}
-              baseColors={references.base_colors}
-              visualMutations={references.visual_mutations}
-              splitGenes={references.split_genes}
-            />
+            <div
+              ref={parent1Ref}
+              className={`parent-form-wrapper ${activeParent === 1 ? 'parent-form-wrapper--active' : ''}`}
+              onFocusCapture={() => setActiveParent(1)}
+            >
+              <ParentForm
+                title="Parent 1"
+                parentNumber={1}
+                formData={parent1}
+                onChange={handleParentChange}
+                speciesList={references.species}
+                baseColors={references.base_colors}
+                visualMutations={references.visual_mutations}
+                splitGenes={references.split_genes}
+              />
+            </div>
+            <div
+              ref={parent2Ref}
+              className={`parent-form-wrapper ${activeParent === 2 ? 'parent-form-wrapper--active' : ''}`}
+              onFocusCapture={() => setActiveParent(2)}
+            >
+              <ParentForm
+                title="Parent 2"
+                parentNumber={2}
+                formData={parent2}
+                onChange={handleParentChange}
+                speciesList={references.species}
+                baseColors={references.base_colors}
+                visualMutations={references.visual_mutations}
+                splitGenes={references.split_genes}
+              />
+            </div>
           </div>
           <div className="form-actions">
             <button type="button" className="btn-cancel" onClick={() => navigate('/')} disabled={submitting || computing}>

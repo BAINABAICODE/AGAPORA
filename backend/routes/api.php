@@ -8,6 +8,7 @@ use App\Http\Controllers\ReferenceDataController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GeneticComputationController;
+use App\Http\Controllers\BirdController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/breeding-pairs/{id}', [BreedingPairController::class, 'show']);
     Route::put('/breeding-pairs/{id}', [BreedingPairController::class, 'update']);
     Route::delete('/breeding-pairs/{id}', [BreedingPairController::class, 'destroy']);
+
+    // Bird inventory CRUD
+    Route::get('/birds', [BirdController::class, 'index']);
+    Route::post('/birds', [BirdController::class, 'store']);
+    Route::get('/birds/{id}', [BirdController::class, 'show']);
+    Route::put('/birds/{id}', [BirdController::class, 'update']);
+    Route::delete('/birds/{id}', [BirdController::class, 'destroy']);
     
     // Genetic computation routes
     Route::post('/compute/{breedingPairId}', [GeneticComputationController::class, 'computeAndPredict']);
