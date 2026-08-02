@@ -1,16 +1,15 @@
-// frontend/src/pages/ComputationResult.jsx
+// frontend/src/pages/ComputationResult.jsx — RBGIA + GICA results (no fixed N=6)
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import './ComputationResult.css';
 
-// ── Small reusable components ──────────────────────────────────
 function ProgressBar({ value, color }) {
   return (
     <div className="progress-bar">
       <div
         className="progress-fill"
-        style={{ width: `${Math.min(value, 100)}%`, background: color || '#EC793D' }}
+        style={{ width: `${Math.min(value || 0, 100)}%`, background: color || '#EC793D' }}
       />
     </div>
   );
@@ -26,18 +25,13 @@ function StatRow({ label, value, color }) {
   );
 }
 
-function Tag({ text, type }) {
-  return <span className={`tag tag-${type || 'default'}`}>{text}</span>;
-}
-
-// ── Main Component ─────────────────────────────────────────────
 const ComputationResult = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('chicks');
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchResult();
@@ -58,7 +52,6 @@ const ComputationResult = () => {
     }
   };
 
-  // Loading state
   if (loading)
     return (
       <div className="computation-result loading-container">
@@ -67,7 +60,6 @@ const ComputationResult = () => {
       </div>
     );
 
-  // Error state
   if (error || !result)
     return (
       <div className="computation-result error-container">
@@ -81,46 +73,45 @@ const ComputationResult = () => {
       </div>
     );
 
-  // Extract data
-  const chicks = result.chicks_data || [];
   const probs = result.probabilities || {};
   const analysis = result.genetic_analysis || {};
   const verification = analysis.verification || result.verification || {};
   const algo = analysis.algorithm || {};
   const bp = result.breeding_pair || {};
   const compat = analysis.species_compatibility || {};
+  const gica = analysis.gica || {};
+  const repro = analysis.reproductive_forecast || {};
+  const report = analysis.report || {};
+  const eggExamples = report.egg_chick_examples || analysis.egg_chick_examples || null;
+  const eggChicks = eggExamples?.chicks || result.chicks_data || [];
 
   const TABS = [
-    { key: 'chicks', label: '🐣 6 Chicks' },
-    { key: 'statistics', label: '📊 Statistics' },
-    { key: 'verification', label: '🔬 Verification' },
-    { key: 'genetics', label: '🧬 Genetic Analysis' },
+    { key: 'overview', label: 'Overview' },
+    { key: 'probabilities', label: 'Probabilities' },
+    { key: 'verification', label: 'Verify' },
+    { key: 'report', label: 'Report' },
+    { key: 'genetics', label: 'Genetics' },
   ];
 
   return (
     <div className="computation-result">
       <div className="result-container">
-        <h1 className="result-title">🧬 Genetic Prediction Results</h1>
+        <h1 className="result-title">Pair Compatibility Results</h1>
         <p className="result-subtitle">
-          6 chicks predicted using a Rule‑Based Genetic Algorithm + Traditional Punnett Square Verification
+          RBGIA probability distributions · GICA Compatibility Index · species reproductive forecast
         </p>
 
         {algo.name && (
           <div className="algo-badge">
             <strong>{algo.name}</strong>
-            {algo.generations && (
-              <span className="algo-detail">
-                &nbsp;· {algo.generations} generations · pop {algo.population_size} · {algo.selection}
-              </span>
-            )}
             <br />
             <small style={{ opacity: 0.7 }}>{algo.computation_location}</small>
           </div>
         )}
 
-        {compat.warning && (
+        {(compat.warning || repro.hybrid_warning) && (
           <div className={`compat-banner ${compat.compatible ? 'compat-warn' : 'compat-error'}`}>
-            ⚠ {compat.warning}
+            ⚠ {repro.hybrid_warning || compat.warning}
           </div>
         )}
 
@@ -136,152 +127,166 @@ const ComputationResult = () => {
           ))}
         </div>
 
-        {/* ========= TAB 1 – 6 CHICKS ========= */}
-        {activeTab === 'chicks' && (
-          <div className="chicks-section">
-            <p className="section-note">
-              These 6 chicks were selected from a population of 60 individuals evolved over 30 generations.
-              Sex is balanced (3M/3F when possible).
-            </p>
-            <div className="chicks-grid">
-              {chicks.map((chick, index) => (
-                <div key={index} className="chick-card">
-                  <div className="chick-header">
-                    <h3>Chick #{chick.chick_number || index + 1}</h3>
-                    <span className={`chick-sex ${(chick.sex || '').toLowerCase()}`}>
-                      {chick.sex === 'Male' ? '♂' : '♀'} {chick.sex}
-                    </span>
-                  </div>
-                  <div className="chick-details">
-                    <div className="detail-item">
-                      <strong>Base Color</strong>
-                      <span className="color-badge">{chick.base_color || '—'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <strong>Visual Color Mutations</strong>
-                      <div className="tags-row">
-                        {chick.visual_mutations && chick.visual_mutations.length > 0
-                          ? chick.visual_mutations.map((m) => <Tag key={m} text={m} type="mutation" />)
-                          : <em className="none-label">None</em>}
-                      </div>
-                    </div>
-                    <div className="detail-item">
-                      <strong>Split / Hidden Genes</strong>
-                      <div className="tags-row">
-                        {chick.split_genes && chick.split_genes.length > 0
-                          ? chick.split_genes.map((g) => <Tag key={g} text={g} type="split" />)
-                          : <em className="none-label">None</em>}
-                      </div>
-                    </div>
-                    <div className="detail-item full">
-                      <strong>Genetic Makeup</strong>
-                      <span className="genetic-makeup">{chick.genetic_makeup || '—'}</span>
-                    </div>
-                    {chick.fitness_score != null && (
-                      <div className="detail-item fitness-row">
-                        <strong>GA Fitness Score</strong>
-                        <span className="fitness-badge">{(chick.fitness_score * 100).toFixed(0)} / 100</span>
-                      </div>
-                    )}
+        {activeTab === 'overview' && (
+          <div className="statistics-section">
+            <div className="stats-grid">
+              <div className="stat-card">
+                <h3>GICA Compatibility Index</h3>
+                <p style={{ fontSize: '2rem', fontWeight: 800, margin: '0.25rem 0' }}>
+                  {gica.score != null ? gica.score : '—'} <small>/ 100</small>
+                </p>
+                <p><strong>{gica.label || '—'}</strong></p>
+                <p className="stat-note">{gica.recommendation || ''}</p>
+                {gica.breakdown && (
+                  <>
+                    <StatRow label="Trait success" value={gica.breakdown.trait_success} color="#66bb6a" />
+                    <StatRow label="Risk" value={gica.breakdown.risk} color="#ef5350" />
+                    <StatRow label="Diversity" value={gica.breakdown.diversity} color="#26c6da" />
+                  </>
+                )}
+              </div>
+              <div className="stat-card">
+                <h3>Reproductive Forecast</h3>
+                <p><strong>Species:</strong> {repro.species_used || '—'}</p>
+                <p>
+                  <strong>Species clutch range:</strong> {repro.eggs_laid_min ?? '—'}–
+                  {repro.eggs_laid_max ?? '—'} (ref. mean {repro.eggs_laid_mean ?? '—'})
+                </p>
+                <p style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+                  Forecast eggs for this pair: {repro.eggs_forecast ?? eggExamples?.egg_count ?? '—'}
+                </p>
+                <p className="stat-note">{repro.eggs_forecast_basis}</p>
+                <p>
+                  <strong>Hatch rate:</strong>{' '}
+                  {repro.hatch_rate_percent != null ? `${repro.hatch_rate_percent}%` : '—'}
+                  {repro.clutch_factor != null ? ` · clutch factor ${repro.clutch_factor}` : ''}
+                </p>
+                <p>
+                  <strong>Expected hatchlings:</strong> {repro.expected_hatchlings ?? '—'}
+                </p>
+                <p className="stat-note">{repro.formula}</p>
+                <ul className="steps-list">
+                  {(repro.adjustment_notes || []).map((note, i) => (
+                    <li key={i}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
 
-                    {/* INHERITANCE PERCENTAGES (new) */}
-                    {chick.inheritance_percentages && (
-                      <div className="detail-item inheritance-row">
-                        <strong>Inheritance from</strong>
-                        <div className="inheritance-bars">
-                          <div
-                            className="mother-bar"
-                            style={{ width: `${chick.inheritance_percentages.mother}%` }}
-                          >
-                            Mother {chick.inheritance_percentages.mother.toFixed(0)}%
-                          </div>
-                          <div
-                            className="father-bar"
-                            style={{ width: `${chick.inheritance_percentages.father}%` }}
-                          >
-                            Father {chick.inheritance_percentages.father.toFixed(0)}%
+            {eggChicks.length > 0 && (
+              <div className="chicks-section" style={{ marginTop: '1.25rem' }}>
+                <h3>Egg possibilities (genotype + phenotype at hatch)</h3>
+                <p className="section-note">{eggExamples?.formula_note || report.reproductive_summary}</p>
+                <div className="chicks-grid">
+                  {eggChicks.map((chick, index) => (
+                    <div key={index} className="chick-card">
+                      <div className="chick-header">
+                        <h3>Egg #{chick.egg_number || index + 1}</h3>
+                        <span className={`chick-sex ${(chick.sex || '').toLowerCase()}`}>
+                          {chick.sex === 'Male' ? '♂' : '♀'} {chick.sex}
+                        </span>
+                      </div>
+                      <div className="chick-details">
+                        <p className="stat-note">
+                          {chick.status === 'expected_hatch' ? 'Expected hatch' : 'Egg possibility'} —{' '}
+                          {chick.hatch_note}
+                        </p>
+                        <div className="detail-item">
+                          <strong>Phenotype</strong>
+                          <span className="genetic-makeup">{chick.phenotype || chick.genetic_makeup || '—'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <strong>Base Color</strong>
+                          <span className="color-badge">{chick.base_color || '—'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <strong>Visual Mutations</strong>
+                          <div className="tags-row">
+                            {chick.visual_mutations?.length
+                              ? chick.visual_mutations.map((m) => (
+                                  <span key={m} className="tag tag-mutation">{m}</span>
+                                ))
+                              : <em className="none-label">None</em>}
                           </div>
                         </div>
+                        <div className="detail-item">
+                          <strong>Splits</strong>
+                          <div className="tags-row">
+                            {chick.split_genes?.length
+                              ? chick.split_genes.map((g) => (
+                                  <span key={g} className="tag tag-split">{g}</span>
+                                ))
+                              : <em className="none-label">None</em>}
+                          </div>
+                        </div>
+                        <div className="detail-item full">
+                          <strong>Genotype</strong>
+                          <span className="genetic-makeup">{chick.genotype || '—'}</span>
+                        </div>
+                        {(chick.inherited_traits || []).length > 0 && (
+                          <ul className="steps-list">
+                            {chick.inherited_traits.map((line, i) => (
+                              <li key={i}>{line}</li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            <p className="section-note" style={{ marginTop: '1rem' }}>
+              Decision-support only. Not a veterinary diagnosis. Actual clutches vary with health,
+              husbandry, and environment.
+            </p>
           </div>
         )}
 
-        {/* ========= TAB 2 – STATISTICS ========= */}
-        {activeTab === 'statistics' && (
+        {activeTab === 'probabilities' && (
           <div className="statistics-section">
             <p className="section-note">
-              Probabilities calculated from the full evolved population of 60 individuals.
-              Genetic diversity score:{' '}
-              <strong>
-                {analysis.genetic_diversity_score != null
-                  ? (analysis.genetic_diversity_score * 100).toFixed(0) + '%'
-                  : 'N/A'}
-              </strong>
+              RBGIA — Rule-Based Genetic Inheritance Algorithm (deterministic Mendelian probabilities)
             </p>
             <div className="stats-grid">
               <div className="stat-card">
-                <h3>Sex Distribution</h3>
+                <h3>Sex</h3>
                 <StatRow label="Male ♂" value={probs.sex?.Male || 0} color="#5b8dee" />
                 <StatRow label="Female ♀" value={probs.sex?.Female || 0} color="#f78fb3" />
               </div>
               <div className="stat-card">
-                <h3>Base Color Distribution</h3>
+                <h3>Base Color</h3>
                 {Object.entries(probs.base_colors || {}).map(([color, p]) => (
                   <StatRow key={color} label={color} value={p} color="#66bb6a" />
                 ))}
-                {Object.keys(probs.base_colors || {}).length === 0 && <p className="none-label">No data</p>}
               </div>
               {Object.keys(probs.mutations || {}).length > 0 && (
                 <div className="stat-card full-width">
-                  <h3>Visual Mutation Probabilities</h3>
-                  <p className="stat-note">How often each mutation appeared in the evolved population.</p>
-                  <div className="mutations-grid">
-                    {Object.entries(probs.mutations).map(([m, p]) => (
-                      <StatRow key={m} label={m} value={p} color="#ab47bc" />
-                    ))}
-                  </div>
+                  <h3>Visual Mutations</h3>
+                  {Object.entries(probs.mutations).map(([m, p]) => (
+                    <StatRow key={m} label={m} value={p} color="#ab47bc" />
+                  ))}
                 </div>
               )}
               {Object.keys(probs.split_genes || {}).length > 0 && (
                 <div className="stat-card full-width">
-                  <h3>Split / Carrier Gene Probabilities</h3>
-                  <p className="stat-note">How often each split gene appeared as a carrier in offspring.</p>
-                  <div className="mutations-grid">
-                    {Object.entries(probs.split_genes).map(([g, p]) => (
-                      <StatRow key={g} label={g} value={p} color="#ff7043" />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {analysis.genetic_diversity_score != null && (
-                <div className="stat-card">
-                  <h3>Genetic Diversity Score</h3>
-                  <StatRow
-                    label="Diversity"
-                    value={analysis.genetic_diversity_score * 100}
-                    color="#26c6da"
-                  />
-                  <p className="stat-note">
-                    Higher diversity → more varied offspring phenotypes expected.
-                  </p>
+                  <h3>Splits / Carriers</h3>
+                  {Object.entries(probs.split_genes).map(([g, p]) => (
+                    <StatRow key={g} label={g} value={p} color="#ff7043" />
+                  ))}
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ========= TAB 3 – VERIFICATION ========= */}
         {activeTab === 'verification' && (
           <div className="verification-section">
             {verification.method ? (
               <>
                 <div className="verify-header">
-                  <h3>🔬 Verification Method</h3>
+                  <h3>Mendelian / Punnett Verification</h3>
                   <p className="method-name">{verification.method}</p>
                   {verification.confidence_score != null && (
                     <div className="confidence-row">
@@ -295,33 +300,30 @@ const ComputationResult = () => {
                 </div>
                 <div className="verify-grid">
                   <div className="verify-card">
-                    <h4>📐 Base Color – Exact Punnett Square</h4>
-                    <p className="verify-note">
-                      16 allele combinations from blue‑series × dark‑factor.
-                    </p>
+                    <h4>Base Color</h4>
                     {Object.entries(verification.base_color_probabilities || {}).map(([c, p]) => (
                       <StatRow key={c} label={c} value={p} color="#66bb6a" />
                     ))}
                     {verification.punnett_detail && (
                       <div className="punnett-detail">
-                        <small>Blue‑series cross: <code>{verification.punnett_detail.blue_series_cross}</code></small>
+                        <small>
+                          Blue-series: <code>{verification.punnett_detail.blue_series_cross}</code>
+                        </small>
                         <br />
-                        <small>Dark‑factor cross: <code>{verification.punnett_detail.dark_factor_cross}</code></small>
+                        <small>
+                          Dark-factor: <code>{verification.punnett_detail.dark_factor_cross}</code>
+                        </small>
                       </div>
                     )}
                   </div>
                   <div className="verify-card">
-                    <h4>⚧ Sex Distribution – Theoretical</h4>
-                    <p className="verify-note">ZZ/ZW system → always 50% Male / 50% Female.</p>
+                    <h4>Sex (ZW)</h4>
                     <StatRow label="Male ♂" value={50} color="#5b8dee" />
                     <StatRow label="Female ♀" value={50} color="#f78fb3" />
                   </div>
                   {Object.keys(verification.mutation_probabilities || {}).length > 0 && (
                     <div className="verify-card full-width">
-                      <h4>🌀 Visual Mutation Probability – Fuzzy Logic</h4>
-                      <p className="verify-note">
-                        Fuzzy inference based on how many parents express or carry the mutation.
-                      </p>
+                      <h4>Mutations</h4>
                       {Object.entries(verification.mutation_probabilities).map(([m, p]) => (
                         <StatRow key={m} label={m} value={p} color="#ab47bc" />
                       ))}
@@ -329,27 +331,12 @@ const ComputationResult = () => {
                   )}
                   {Object.keys(verification.split_probabilities || {}).length > 0 && (
                     <div className="verify-card full-width">
-                      <h4>🔮 Split / Carrier Gene Probability – Fuzzy Logic</h4>
-                      <p className="verify-note">
-                        Probability that an offspring is a silent carrier.
-                      </p>
+                      <h4>Splits</h4>
                       {Object.entries(verification.split_probabilities).map(([g, p]) => (
                         <StatRow key={g} label={g} value={p} color="#ff7043" />
                       ))}
                     </div>
                   )}
-                </div>
-                <div className="verify-explanation">
-                  <h4>How the Verification Works</h4>
-                  <p>
-                    This tab shows results from a <strong>completely independent</strong> computation
-                    using different methods from the Genetic Algorithm.
-                  </p>
-                  <ul>
-                    <li><strong>Base Color:</strong> Exact Punnett‑Square math (16 outcomes).</li>
-                    <li><strong>Mutations:</strong> Fuzzy Logic inference (membership functions).</li>
-                    <li>If Statistics and Verification tabs show similar numbers, the computation is validated.</li>
-                  </ul>
                 </div>
               </>
             ) : (
@@ -360,40 +347,203 @@ const ComputationResult = () => {
           </div>
         )}
 
-        {/* ========= TAB 4 – GENETIC ANALYSIS ========= */}
+        {activeTab === 'report' && (
+          <div className="genetics-section">
+            <div className="genetics-card">
+              <h3>{report.title || 'Computational Summary (RBGIA + GICA)'}</h3>
+              <div className="genetics-info">
+                <p>{report.determinism}</p>
+                <p>
+                  <strong>Time complexity:</strong> {report.time_complexity || 'O(M) to O(M·K)'}
+                </p>
+                <p className="stat-note">{report.time_complexity_note}</p>
+                <p>
+                  <strong>Space complexity:</strong> {report.space_complexity || 'O(M)'}
+                </p>
+                <p className="stat-note">{report.space_complexity_note}</p>
+                <p>{report.scalability}</p>
+                <p>{report.note_n6_removed}</p>
+                <p>{report.reproductive_summary}</p>
+                <p>{report.gica_summary}</p>
+                {report.inheritance_summary && <p>{report.inheritance_summary}</p>}
+                <p className="section-note">{report.disclaimer}</p>
+              </div>
+            </div>
+
+            {(report.inherited_traits || analysis.inherited_traits) && (() => {
+              const it = report.inherited_traits || analysis.inherited_traits || {};
+              const phen = it.expected_phenotype_summary || {};
+              const color = it.color_inheritance || {};
+              return (
+                <div className="genetics-card">
+                  <h3>{it.title || 'Genetic Traits Offspring Inherit from Parents'}</h3>
+                  <div className="genetics-info">
+                    <p className="stat-note">{it.summary}</p>
+                    <p>
+                      <strong>Most likely base color:</strong> {phen.most_likely_base_color || '—'}{' '}
+                      ({phen.most_likely_base_color_percent ?? '—'}%)
+                    </p>
+                    <p>
+                      <strong>Visual mutations ≥25%:</strong>{' '}
+                      {(phen.likely_visual_mutations || []).join(', ') || 'none'}
+                    </p>
+                    <p>
+                      <strong>Likely splits ≥25%:</strong>{' '}
+                      {(phen.likely_splits || []).join(', ') || 'none'}
+                    </p>
+                    <p>
+                      <strong>Sex:</strong> {phen.sex_ratio || '50% Male / 50% Female'}
+                    </p>
+
+                    <h4 style={{ marginTop: '1rem' }}>Base color inheritance</h4>
+                    <p>
+                      {color.parent1_phenotype || '—'} × {color.parent2_phenotype || '—'} →{' '}
+                      <strong>{color.most_likely_offspring || '—'}</strong> (
+                      {color.probability_percent ?? '—'}%)
+                    </p>
+                    <p className="stat-note">{color.computation}</p>
+
+                    {(it.mutation_traits || []).length > 0 && (
+                      <>
+                        <h4>Visual mutations inherited</h4>
+                        <ul className="steps-list">
+                          {it.mutation_traits.map((t) => (
+                            <li key={t.trait}>
+                              <strong>{t.trait}</strong> — {t.probability_percent}% visual (
+                              {(t.inheritance_type || '').replace(/_/g, ' ')}). From:{' '}
+                              {(t.inherited_from || []).join('; ')}. {t.computation}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+
+                    {(it.split_traits || []).length > 0 && (
+                      <>
+                        <h4>Splits / carriers inherited</h4>
+                        <ul className="steps-list">
+                          {it.split_traits.map((t) => (
+                            <li key={t.trait}>
+                              <strong>{t.trait}</strong> — {t.probability_percent}% silent carrier.
+                              From: {(t.inherited_from || []).join('; ')}.
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+
+                    <h4>Feature lines</h4>
+                    <ul className="steps-list">
+                      {(it.feature_lines || []).map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {eggChicks.length > 0 && (
+              <div className="genetics-card">
+                <h3>Chicks / eggs from reproductive forecast</h3>
+                <p className="stat-note">{eggExamples?.formula_note || report.reproductive_summary}</p>
+                <div className="chicks-grid">
+                  {eggChicks.map((chick, index) => (
+                    <div key={index} className="chick-card">
+                      <div className="chick-header">
+                        <h3>Egg #{chick.egg_number || index + 1}</h3>
+                        <span className={`chick-sex ${(chick.sex || '').toLowerCase()}`}>
+                          {chick.sex === 'Male' ? '♂' : '♀'} {chick.sex}
+                        </span>
+                      </div>
+                      <div className="chick-details">
+                        <p className="stat-note">
+                          {chick.status === 'expected_hatch' ? 'Expected hatch' : 'Egg possibility'}
+                        </p>
+                        <p>
+                          <strong>Phenotype:</strong> {chick.phenotype || '—'}
+                        </p>
+                        <p>
+                          <strong>Genotype:</strong> {chick.genotype || '—'}
+                        </p>
+                        <p>
+                          <strong>Mutations:</strong>{' '}
+                          {chick.visual_mutations?.join(', ') || 'None'}
+                        </p>
+                        <p>
+                          <strong>Splits:</strong> {chick.split_genes?.join(', ') || 'None'}
+                        </p>
+                        <ul className="steps-list">
+                          {(chick.inherited_traits || []).map((line, i) => (
+                            <li key={i}>{line}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'genetics' && (
           <div className="genetics-section">
             <div className="genetics-card">
-              <h3>Parent 1 — {bp.parent1_sex === 'Male' ? '♂' : '♀'} {bp.parent1_species || 'Unknown'}</h3>
+              <h3>
+                Parent 1 — {bp.parent1_sex === 'Male' ? '♂' : '♀'} {bp.parent1_species || 'Unknown'}
+              </h3>
               <div className="genetics-info">
-                <p><strong>Base Color:</strong> {bp.parent1_base_color || '—'}</p>
-                <p><strong>Visual Mutations:</strong> {bp.parent1_visual_mutations?.length ? bp.parent1_visual_mutations.join(', ') : 'None'}</p>
-                <p><strong>Split Genes:</strong> {bp.parent1_split_genes?.length ? bp.parent1_split_genes.join(', ') : 'None'}</p>
-                {analysis.parent1?.encoded_alleles && (
-                  <>
-                    <p><strong>Encoded Blue‑series:</strong> [{analysis.parent1.encoded_alleles.blue_series?.join(', ')}]</p>
-                    <p><strong>Encoded Dark‑factor:</strong> [{analysis.parent1.encoded_alleles.dark_factor?.join(', ')}]</p>
-                  </>
-                )}
+                <p>
+                  <strong>Base Color:</strong> {bp.parent1_base_color || '—'}
+                </p>
+                <p>
+                  <strong>Visual Mutations:</strong>{' '}
+                  {bp.parent1_visual_mutations?.length
+                    ? bp.parent1_visual_mutations.join(', ')
+                    : 'None'}
+                </p>
+                <p>
+                  <strong>Split Genes:</strong>{' '}
+                  {bp.parent1_split_genes?.length ? bp.parent1_split_genes.join(', ') : 'None'}
+                </p>
               </div>
             </div>
             <div className="genetics-card">
-              <h3>Parent 2 — {bp.parent2_sex === 'Male' ? '♂' : '♀'} {bp.parent2_species || 'Unknown'}</h3>
+              <h3>
+                Parent 2 — {bp.parent2_sex === 'Male' ? '♂' : '♀'} {bp.parent2_species || 'Unknown'}
+              </h3>
               <div className="genetics-info">
-                <p><strong>Base Color:</strong> {bp.parent2_base_color || '—'}</p>
-                <p><strong>Visual Mutations:</strong> {bp.parent2_visual_mutations?.length ? bp.parent2_visual_mutations.join(', ') : 'None'}</p>
-                <p><strong>Split Genes:</strong> {bp.parent2_split_genes?.length ? bp.parent2_split_genes.join(', ') : 'None'}</p>
-                {analysis.parent2?.encoded_alleles && (
-                  <>
-                    <p><strong>Encoded Blue‑series:</strong> [{analysis.parent2.encoded_alleles.blue_series?.join(', ')}]</p>
-                    <p><strong>Encoded Dark‑factor:</strong> [{analysis.parent2.encoded_alleles.dark_factor?.join(', ')}]</p>
-                  </>
-                )}
+                <p>
+                  <strong>Base Color:</strong> {bp.parent2_base_color || '—'}
+                </p>
+                <p>
+                  <strong>Visual Mutations:</strong>{' '}
+                  {bp.parent2_visual_mutations?.length
+                    ? bp.parent2_visual_mutations.join(', ')
+                    : 'None'}
+                </p>
+                <p>
+                  <strong>Split Genes:</strong>{' '}
+                  {bp.parent2_split_genes?.length ? bp.parent2_split_genes.join(', ') : 'None'}
+                </p>
               </div>
             </div>
+            {analysis.inheritance_rules && (
+              <div className="genetics-card">
+                <h3>Inheritance Rules</h3>
+                <div className="genetics-info">
+                  {Object.entries(analysis.inheritance_rules).map(([key, val]) => (
+                    <p key={key}>
+                      <strong>{key.replace(/_/g, ' ')}:</strong> {val}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
             {algo.steps_performed && (
               <div className="genetics-card">
-                <h3>Algorithm Steps Performed</h3>
+                <h3>Algorithm Steps</h3>
                 <div className="genetics-info">
                   <ol className="steps-list">
                     {algo.steps_performed.map((step, i) => (
@@ -403,44 +553,6 @@ const ComputationResult = () => {
                 </div>
               </div>
             )}
-            {analysis.punnett_square && (
-              <div className="genetics-card">
-                <h3>Punnett Square Data</h3>
-                <div className="genetics-info">
-                  <p><strong>Blue‑series combinations:</strong> {(analysis.punnett_square.blue_series_combinations || []).map(a => a.join('')).join(' | ')}</p>
-                  <p><strong>Dark‑factor combinations:</strong> {(analysis.punnett_square.dark_factor_combinations || []).map(a => a.join('')).join(' | ')}</p>
-                  {analysis.punnett_square.mutation_loci_processed?.length > 0 && (
-                    <p><strong>Mutation loci processed:</strong> {analysis.punnett_square.mutation_loci_processed.join(', ')}</p>
-                  )}
-                </div>
-              </div>
-            )}
-            {analysis.inheritance_rules && (
-              <div className="genetics-card">
-                <h3>Inheritance Rules Applied</h3>
-                <div className="genetics-info">
-                  {Object.entries(analysis.inheritance_rules).map(([key, val]) => (
-                    <p key={key}><strong>{key.replace(/_/g, ' ')}:</strong> {val}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="genetics-card">
-              <h3>Result Summary</h3>
-              <div className="genetics-info">
-                <p><strong>Total Chicks:</strong> {chicks.length}</p>
-                <p><strong>Male Count:</strong> {chicks.filter(c => c.sex === 'Male').length}</p>
-                <p><strong>Female Count:</strong> {chicks.filter(c => c.sex === 'Female').length}</p>
-                <p><strong>Unique Base Colors:</strong> {[...new Set(chicks.map(c => c.base_color))].join(', ') || '—'}</p>
-                <p><strong>Most Common Color:</strong> {Object.entries(probs.base_colors || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || '—'}</p>
-                {Object.keys(probs.mutations || {}).length > 0 && (
-                  <p><strong>Most Likely Mutation:</strong> {Object.entries(probs.mutations).sort((a, b) => b[1] - a[1])[0]?.[0] || '—'}</p>
-                )}
-                {analysis.genetic_diversity_score != null && (
-                  <p><strong>Genetic Diversity Score:</strong> {(analysis.genetic_diversity_score * 100).toFixed(0)}%</p>
-                )}
-              </div>
-            </div>
           </div>
         )}
 

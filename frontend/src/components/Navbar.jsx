@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
-import logo from '../assets/birds/logo-lovebirds.png';
+import logo from '../assets/birds/Logo-lovebirds.png';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -24,11 +24,7 @@ const Navbar = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
-      if (
-        menuOpen &&
-        navRef.current &&
-        !navRef.current.contains(event.target)
-      ) {
+      if (menuOpen && navRef.current && !navRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
     };
@@ -101,11 +97,7 @@ const Navbar = () => {
             <Link to="/help" className="nav-link" onClick={closeMenu}>
               Help
             </Link>
-            <Link
-              to="/breeding-form"
-              className="nav-link"
-              onClick={handleBreedClick}
-            >
+            <Link to="/breeding-form" className="nav-link" onClick={handleBreedClick}>
               Breed
             </Link>
             <Link to="/about" className="nav-link" onClick={closeMenu}>
@@ -119,11 +111,7 @@ const Navbar = () => {
                     Admin
                   </Link>
                 )}
-                <Link
-                  to="/breeding-pairs"
-                  className="nav-link"
-                  onClick={closeMenu}
-                >
+                <Link to="/breeding-pairs" className="nav-link" onClick={closeMenu}>
                   My Pairs
                 </Link>
               </>
@@ -133,18 +121,10 @@ const Navbar = () => {
           <div className="nav-auth">
             {!user ? (
               <>
-                <button
-                  type="button"
-                  className="auth-btn login-btn"
-                  onClick={handleLoginClick}
-                >
+                <button type="button" className="auth-btn login-btn" onClick={handleLoginClick}>
                   Login
                 </button>
-                <button
-                  type="button"
-                  className="auth-btn signup-btn"
-                  onClick={handleSignupClick}
-                >
+                <button type="button" className="auth-btn signup-btn" onClick={handleSignupClick}>
                   Sign Up
                 </button>
               </>
@@ -162,26 +142,14 @@ const Navbar = () => {
                 </button>
                 {showUserMenu && (
                   <div className="user-dropdown">
-                    <Link
-                      to="/breeding-pairs"
-                      className="dropdown-item"
-                      onClick={closeMenu}
-                    >
+                    <Link to="/breeding-pairs" className="dropdown-item" onClick={closeMenu}>
                       My Breeding Pairs
                     </Link>
-                    <Link
-                      to="/breeding-form"
-                      className="dropdown-item"
-                      onClick={closeMenu}
-                    >
+                    <Link to="/breeding-form" className="dropdown-item" onClick={closeMenu}>
                       New Breeding Pair
                     </Link>
                     {user.role === 'admin' && (
-                      <Link
-                        to="/admin"
-                        className="dropdown-item"
-                        onClick={closeMenu}
-                      >
+                      <Link to="/admin" className="dropdown-item" onClick={closeMenu}>
                         Admin Panel
                       </Link>
                     )}

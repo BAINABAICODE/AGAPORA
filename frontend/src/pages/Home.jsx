@@ -97,41 +97,36 @@ const Home = () => {
     <div className="home">
       <div className="hero-section">
         <div className="hero-content">
-          {/* Left Column - Text Content */}
           <div className="text-column">
             <h1 className="main-title">
               <span className="title-highlight">Agapora</span>
               <span className="title-sub">Scientific Lovebird Breeding Platform</span>
             </h1>
-            
+
             <div className="info-text-wrapper">
               <p className="info-text">
-                Welcome to Agapora – a cutting‑edge platform designed to help lovebird breeders 
+                Welcome to Agapora – a cutting‑edge platform designed to help lovebird breeders
                 predict pair compatibility using rule‑based genetic inheritance.
               </p>
               <p className="info-text">
-                Our algorithm analyzes genetic data to guide breeders in selecting optimal pairs 
-                and provides predictions of genetic inheritance for six lovebird chicks.
+                Our algorithm analyzes genetic data to guide breeders in selecting optimal pairs
+                and provides RBGIA/GICA pair compatibility with species-based reproductive forecasts.
               </p>
               <p className="info-text highlight">
                 By replacing guesswork with science, Agapora ensures a reliable and consistent breeding process.
               </p>
             </div>
-            
+
             <button className="cta-button" onClick={handleStartBreeding}>
               Start Breeding Now
             </button>
           </div>
 
-          {/* Right Column - Bird Card Carousel */}
           <div className="carousel-column">
-            <div 
-              className="bird-card"
-              style={{ background: cardGradient }}
-            >
+            <div className="bird-card" style={{ background: cardGradient }}>
               <div className="bird-image-container">
-                <img 
-                  src={currentSpecies.image_src} 
+                <img
+                  src={currentSpecies.image_src}
                   alt={currentSpecies.name}
                   className="bird-image"
                   onError={(e) => {
@@ -139,27 +134,30 @@ const Home = () => {
                   }}
                 />
               </div>
-              
+
               <div className="bird-info-container">
                 <h2 className="bird-name">{currentSpecies.name}</h2>
                 <p className="bird-scientific">{currentSpecies.scientific_name}</p>
                 <p className="bird-description">{currentSpecies.description}</p>
               </div>
 
-              {/* Navigation Arrows */}
               {species.length > 1 && (
                 <>
-                  <button className="nav-arrow prev" onClick={handlePrevSlide}>‹</button>
-                  <button className="nav-arrow next" onClick={handleNextSlide}>›</button>
+                  <button type="button" className="nav-arrow prev" onClick={handlePrevSlide}>
+                    ‹
+                  </button>
+                  <button type="button" className="nav-arrow next" onClick={handleNextSlide}>
+                    ›
+                  </button>
                 </>
               )}
 
-              {/* Dots Indicator */}
               {species.length > 1 && (
                 <div className="dots-container">
                   {species.map((_, index) => (
                     <button
                       key={index}
+                      type="button"
                       className={`dot ${index === currentSlide ? 'active' : ''}`}
                       onClick={() => setCurrentSlide(index)}
                       aria-label={`Go to slide ${index + 1}`}
@@ -168,14 +166,14 @@ const Home = () => {
                 </div>
               )}
             </div>
-            
-            {/* Learn More Button – outside the card, border adapts to current species gradient */}
+
             <div className="learn-more-wrapper">
-              <button 
+              <button
+                type="button"
                 className="learn-more-button"
                 style={{
                   borderColor: currentSpecies.gradient_from,
-                  color: currentSpecies.gradient_from
+                  color: currentSpecies.gradient_from,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = currentSpecies.gradient_from;

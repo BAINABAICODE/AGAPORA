@@ -3,10 +3,10 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import LoginModal from '../components/LoginModal';
 import TermsModal from '../components/TermsModal';
+import MobileNavbar from '../components/MobileNavbar';
 import HomeScreen from '../screens/HomeScreen';
 import BreedingFormScreen from '../screens/BreedingFormScreen';
 import BreedingPairsScreen from '../screens/BreedingPairsScreen';
@@ -14,21 +14,20 @@ import ComputationResultScreen from '../screens/ComputationResultScreen';
 import AboutScreen from '../screens/AboutScreen';
 import HelpScreen from '../screens/HelpScreen';
 import AdminScreen from '../screens/AdminScreen';
-import MoreScreen from '../screens/MoreScreen';
 import BirdListScreen from '../screens/BirdListScreen';
+import { navigationRef } from './navigationRef';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const MoreStack = createNativeStackNavigator();
-const RootStack = createNativeStackNavigator();
+const AppStack = createNativeStackNavigator();
 
 function MoreStackNavigator() {
   return (
-    <MoreStack.Navigator>
-      <MoreStack.Screen name="MoreHome" component={MoreScreen} options={{ title: 'More' }} />
+    <MoreStack.Navigator screenOptions={{ headerShown: false }}>
       <MoreStack.Screen name="About" component={AboutScreen} />
-      <MoreStack.Screen name="Help" component={HelpScreen} options={{ title: 'Help' }} />
-      <MoreStack.Screen name="Admin" component={AdminScreen} options={{ title: 'Admin' }} />
+      <MoreStack.Screen name="Help" component={HelpScreen} />
+      <MoreStack.Screen name="Admin" component={AdminScreen} />
     </MoreStack.Navigator>
   );
 }
@@ -38,29 +37,15 @@ function MainTabs() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: colors.navBg },
-        headerTintColor: '#fff',
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.bgElevated },
-        tabBarIcon: ({ color, size }) => {
-          const map = {
-            Home: 'home',
-            Breed: 'flask',
-            Birds: 'paw',
-            Pairs: 'people',
-            More: 'menu',
-          };
-          return <Ionicons name={map[route.name] || 'ellipse'} size={size} color={color} />;
-        },
-      })}
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: 'none' },
+      }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'AGAPORAS' }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen
         name="Breed"
         component={BreedingFormScreen}
-        options={{ title: 'Breed', headerStyle: { backgroundColor: colors.toolEnd }, headerTintColor: colors.toolGold }}
         listeners={() => ({
           tabPress: (e) => {
             if (!user) {
@@ -73,7 +58,6 @@ function MainTabs() {
       <Tab.Screen
         name="Birds"
         component={BirdListScreen}
-        options={{ title: 'Birds' }}
         listeners={() => ({
           tabPress: (e) => {
             if (!user) {
@@ -86,11 +70,6 @@ function MainTabs() {
       <Tab.Screen
         name="Pairs"
         component={BreedingPairsScreen}
-        options={{
-          title: 'Pairs',
-          headerStyle: { backgroundColor: colors.toolEnd },
-          headerTintColor: colors.toolGold,
-        }}
         listeners={() => ({
           tabPress: (e) => {
             if (!user) {
@@ -100,12 +79,30 @@ function MainTabs() {
           },
         })}
       />
-      <Tab.Screen
-        name="More"
-        component={MoreStackNavigator}
-        options={{ headerShown: false }}
-      />
+      <Tab.Screen name="More" component={MoreStackNavigator} />
     </Tab.Navigator>
+  );
+}
+
+function ShellScreen() {
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <MobileNavbar />
+      <View style={{ flex: 1 }}>
+        <MainTabs />
+      </View>
+    </View>
+  );
+}
+
+function ResultShell({ route, navigation }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.toolEnd }}>
+      <MobileNavbar />
+      <View style={{ flex: 1 }}>
+        <ComputationResultScreen route={route} navigation={navigation} />
+      </View>
+    </View>
   );
 }
 
@@ -122,22 +119,10 @@ function RootNavigator() {
 
   return (
     <>
-      <RootStack.Navigator>
-        <RootStack.Screen
-          name="MainTabs"
-          component={MainTabs}
-          options={{ headerShown: false }}
-        />
-        <RootStack.Screen
-          name="ComputationResult"
-          component={ComputationResultScreen}
-          options={{
-            title: 'Results',
-            headerStyle: { backgroundColor: colors.toolEnd },
-            headerTintColor: colors.toolGold,
-          }}
-        />
-      </RootStack.Navigator>
+      <AppStack.Navigator screenOptions={{ headerShown: false }}>
+        <AppStack.Screen name="Shell" component={ShellScreen} />
+        <AppStack.Screen name="ComputationResult" component={ResultShell} />
+      </AppStack.Navigator>
       <LoginModal />
       {user ? <TermsModal /> : null}
     </>
@@ -146,7 +131,7 @@ function RootNavigator() {
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <RootNavigator />
     </NavigationContainer>
   );

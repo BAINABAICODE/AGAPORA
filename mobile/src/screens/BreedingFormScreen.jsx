@@ -165,8 +165,9 @@ const BreedingFormScreen = () => {
 
     try {
       logStep('Step 1: Encoding genetic data...');
-      logStep('Step 2: Building Punnett matrices...');
-      logStep('Step 3: Running Genetic Algorithm...');
+      logStep('Step 2: RBGIA Mendelian / Punnett probabilities...');
+      logStep('Step 3: GICA Compatibility Index...');
+      logStep('Step 4: Species reproductive forecast...');
 
       const results = computeGenetics(
         { ...formData, parent1_name: parent1.name, parent2_name: parent2.name },
@@ -176,10 +177,13 @@ const BreedingFormScreen = () => {
       logStep('Storing results on server...');
 
       const storeRes = await api.post(`/compute/${breedingPairId}`, {
-        chicks_data: results.chicks,
+        chicks_data: results.chicks_data || [],
         genetic_analysis: results.genetic_analysis,
         probabilities: results.probabilities,
         verification: results.verification,
+        gica: results.gica,
+        reproductive_forecast: results.reproductive_forecast,
+        report: results.report,
       });
 
       if (!storeRes.data.success) throw new Error('Failed to store results');
@@ -188,8 +192,7 @@ const BreedingFormScreen = () => {
       resetForm();
 
       setTimeout(() => {
-        const root = navigation.getParent()?.getParent?.() || navigation.getParent() || navigation;
-        root.navigate('ComputationResult', { id: breedingPairId });
+        navigation.navigate('ComputationResult', { id: breedingPairId });
       }, 600);
     } catch (err) {
       toast.error('Computation error: ' + (err.message || 'Unknown error'));

@@ -171,16 +171,12 @@ const BreedingForm = () => {
       logStep('   ↳ Per-mutation locus crossings computed');
       await new Promise(r => setTimeout(r, 100));
 
-      logStep('🔬 Step 3: Running Genetic Algorithm (60 individuals, 30 generations)...');
-      logStep('   ↳ 3a. Species compatibility check');
-      logStep('   ↳ 3b. Genetic diversity score calculated');
-      logStep('   ↳ 3c. Initial population seeded via Punnett sampling');
+      logStep('🔬 Step 3: Running RBGIA (Mendelian / Punnett probabilities)...');
+      logStep('   ↳ Exact allele enumeration for base color, mutations, splits, sex');
       await new Promise(r => setTimeout(r, 80));
 
-      logStep('   ↳ 3d. Linear Rank Selection (assigning rank probabilities)');
-      logStep('   ↳ 3e. Parameterized Uniform Crossover (per-gene, diversity-adjusted)');
-      logStep('   ↳ 3f. Random Resetting Mutation (annealed rate)');
-      logStep('   ↳ 3g. Inversion Mutation (chromosomal inversion model)');
+      logStep('🔬 Step 4: Running GICA (Compatibility Index)...');
+      logStep('   ↳ Trait success · risk · diversity → score + label');
       await new Promise(r => setTimeout(r, 80));
 
       const results = computeGenetics(
@@ -188,21 +184,20 @@ const BreedingForm = () => {
         references.visual_mutations
       );
 
-      logStep('🔬 Verification: Running Traditional Punnett + Fuzzy Logic (independent)...');
-      await new Promise(r => setTimeout(r, 80));
-      logStep('   ↳ Exact Punnett Square for base color probabilities');
-      logStep('   ↳ Fuzzy Logic membership functions for mutation probabilities');
-      logStep('   ↳ Confidence score calculated');
+      logStep('🥚 Reproductive forecast: eggs_laid_mean × hatch_rate...');
       await new Promise(r => setTimeout(r, 60));
-      logStep('🐣 Selecting 6 offspring from evolved population (balanced sex)...');
+      logStep('🔬 Verification: Mendelian / Punnett check + confidence...');
       await new Promise(r => setTimeout(r, 60));
 
       logStep('💾 Storing results on server...');
       const storeRes = await axios.post(`/compute/${breedingPairId}`, {
-        chicks_data: results.chicks,
+        chicks_data: results.chicks_data || [],
         genetic_analysis: results.genetic_analysis,
         probabilities: results.probabilities,
         verification: results.verification,
+        gica: results.gica,
+        reproductive_forecast: results.reproductive_forecast,
+        report: results.report,
       });
 
       if (!storeRes.data.success) throw new Error('Failed to store results');

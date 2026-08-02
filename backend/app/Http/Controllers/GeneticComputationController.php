@@ -1,22 +1,8 @@
 <?php
 // =============================================================
-// FILE: backend/app/Http/Controllers/GeneticComputationController.php
-//       (REPLACE the existing file)
-//
-// WHAT CHANGED FROM ORIGINAL:
-//   BEFORE: This controller computed genetics itself (PHP logic).
-//   AFTER:  All computation is done on the FRONTEND (JavaScript).
-//           This controller now only:
-//             1. Receives pre-computed results from the frontend
-//             2. Validates them
-//             3. Saves them to the database
-//             4. Returns the stored result when requested
-//
-// API ROUTES (unchanged in api.php):
-//   POST /compute/{breedingPairId}
-//     → Receive & store pre-computed results from frontend
-//   GET  /computation-result/{breedingPairId}
-//     → Return stored result with breeding pair data attached
+// GeneticComputationController — stores RBGIA + GICA results
+// Computation runs on the client (GeneticComputationEngine.js).
+// Fixed N=6 chick-card payload is no longer required.
 // =============================================================
 
 namespace App\Http\Controllers;
@@ -29,115 +15,115 @@ use Illuminate\Support\Facades\Auth;
 class GeneticComputationController extends Controller
 {
     /**
-     * Receive pre-computed genetic results from the frontend and store them.
+     * Receive pre-computed RBGIA + GICA results and store them.
      *
-     * The frontend (GeneticComputationEngine.js) sends:
+     * Expected payload (example):
      * {
-     *   "chicks_data": [
-     *     {
-     *       "chick_number":     1,
-     *       "sex":              "Male",
-     *       "base_color":       "Cobalt",
-     *       "visual_mutations": ["Lutino"],
-     *       "split_genes":      ["Pied"],
-     *       "genetic_makeup":   "Cobalt Lutino / split: Pied",
-     *       "fitness_score":    0.72
-     *     },
-     *     ... (6 total)
-     *   ],
-     *   "genetic_analysis": {
-     *     "parent1": { ... encoded alleles, species, etc. },
-     *     "parent2": { ... },
-     *     "algorithm": { ... steps performed, generations, etc. },
-     *     "inheritance_rules": { ... },
-     *     "verification": { ... }
-     *   },
+     *   "chicks_data": [],
      *   "probabilities": {
-     *     "base_colors":  { "Cobalt": 33.3, "Blue": 16.7, ... },
-     *     "sex":          { "Male": 50.0, "Female": 50.0 },
-     *     "mutations":    { "Lutino": 25.0 },
-     *     "split_genes":  { "Pied": 30.0 }
+     *     "base_colors": { "Green": 50.0, "Blue": 50.0 },
+     *     "sex": { "Male": 50.0, "Female": 50.0 },
+     *     "mutations": {},
+     *     "split_genes": {}
      *   },
-     *   "verification": {
-     *     "method": "Traditional Punnett Square + Fuzzy Logic Inference",
-     *     "base_color_probabilities": { ... },
-     *     "mutation_probabilities":   { ... },
-     *     "split_probabilities":      { ... },
-     *     "confidence_score":         80
-     *   }
+     *   "genetic_analysis": {
+     *     "rbgia": { ... },
+     *     "gica": { "score": 72.5, "label": "Good", "breakdown": { ... } },
+     *     "reproductive_forecast": {
+     *       "eggs_laid_mean": 5.0,
+     *       "hatch_rate": 0.7,
+     *       "expected_hatchlings": 3.5
+     *     },
+     *     "report": { "time_complexity": "O(M) to O(M·K)", ... }
+     *   },
+     *   "verification": { "method": "...", "confidence_score": 80 },
+     *   "gica": { ... },
+     *   "reproductive_forecast": { ... },
+     *   "report": { ... }
      * }
-     *
-     * @param Request $request
-     * @param int     $breedingPairId
-     * @return \Illuminate\Http\JsonResponse
      */
     public function computeAndPredict(Request $request, $breedingPairId)
     {
         try {
-            // ── 1. Verify breeding pair belongs to this user ─────────────
             $breedingPair = BreedingPair::where('user_id', Auth::id())
                 ->findOrFail($breedingPairId);
 
-            // ── 2. Validate the incoming pre-computed payload ────────────
             $validated = $request->validate([
-                // 6 chicks array — required
-                'chicks_data'                         => 'required|array|min:1|max:10',
-                'chicks_data.*.sex'                   => 'required|in:Male,Female',
-                'chicks_data.*.base_color'            => 'required|string|max:100',
-                'chicks_data.*.visual_mutations'      => 'present|array',
-                'chicks_data.*.visual_mutations.*'    => 'string|max:100',
-                'chicks_data.*.split_genes'           => 'present|array',
-                'chicks_data.*.split_genes.*'         => 'string|max:100',
-                'chicks_data.*.genetic_makeup'        => 'required|string|max:500',
+                // Legacy column kept nullable/empty — no fixed clutch of 6
+                'chicks_data'                               => 'nullable|array',
+                'chicks_data.*.sex'                         => 'nullable|in:Male,Female',
+                'chicks_data.*.base_color'                  => 'nullable|string|max:100',
+                'chicks_data.*.visual_mutations'            => 'nullable|array',
+                'chicks_data.*.split_genes'                 => 'nullable|array',
+                'chicks_data.*.genetic_makeup'              => 'nullable|string|max:500',
 
-                // Analysis object — required
-                'genetic_analysis'                    => 'required|array',
+                'genetic_analysis'                          => 'required|array',
+                'genetic_analysis.gica'                     => 'nullable|array',
+                'genetic_analysis.reproductive_forecast'    => 'nullable|array',
+                'genetic_analysis.report'                   => 'nullable|array',
+                'genetic_analysis.rbgia'                    => 'nullable|array',
 
-                // Probabilities — required
-                'probabilities'                       => 'required|array',
-                'probabilities.base_colors'           => 'required|array',
-                'probabilities.sex'                   => 'required|array',
+                'probabilities'                             => 'required|array',
+                'probabilities.base_colors'                 => 'required|array',
+                'probabilities.sex'                         => 'required|array',
+                'probabilities.mutations'                   => 'nullable|array',
+                'probabilities.split_genes'                 => 'nullable|array',
 
-                // Verification — optional but stored if present
-                'verification'                        => 'nullable|array',
+                'verification'                              => 'nullable|array',
+                'gica'                                      => 'nullable|array',
+                'reproductive_forecast'                     => 'nullable|array',
+                'report'                                    => 'nullable|array',
             ]);
 
-            // ── 3. Merge verification into genetic_analysis ──────────────
-            // We store verification inside genetic_analysis so everything
-            // is in one JSON column for easy retrieval.
             $geneticAnalysis = $validated['genetic_analysis'];
+
             if (!empty($validated['verification'])) {
                 $geneticAnalysis['verification'] = $validated['verification'];
             }
+            if (!empty($validated['gica'])) {
+                $geneticAnalysis['gica'] = $validated['gica'];
+            }
+            if (!empty($validated['reproductive_forecast'])) {
+                $geneticAnalysis['reproductive_forecast'] = $validated['reproductive_forecast'];
+            }
+            if (!empty($validated['report'])) {
+                $geneticAnalysis['report'] = $validated['report'];
+            }
 
-            // ── 4. Upsert the computation result ─────────────────────────
-            // If a result already exists for this breeding pair, update it.
-            // Otherwise create a new record.
+            $chicksData = $validated['chicks_data'] ?? [];
+
+            $summaryPayload = [
+                'gica' => $geneticAnalysis['gica'] ?? null,
+                'reproductive_forecast' => $geneticAnalysis['reproductive_forecast'] ?? null,
+                'probabilities' => $validated['probabilities'],
+            ];
+
             $computationResult = ComputationResult::updateOrCreate(
                 [
                     'breeding_pair_id' => (int) $breedingPairId,
                 ],
                 [
                     'user_id'          => Auth::id(),
-                    'chicks_data'      => $validated['chicks_data'],
+                    'chicks_data'      => $chicksData,
                     'genetic_analysis' => $geneticAnalysis,
                     'probabilities'    => $validated['probabilities'],
                 ]
             );
 
-            // ── 5. Mark the breeding pair as completed ───────────────────
             $breedingPair->update([
-                'computation_results' => $validated['chicks_data'],
+                'computation_results' => $summaryPayload,
                 'status'              => 'completed',
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Genetic computation results stored successfully.',
+                'message' => 'RBGIA + GICA computation results stored successfully.',
                 'data'    => [
                     'computation_result_id' => $computationResult->id,
                     'breeding_pair_id'      => (int) $breedingPairId,
-                    'chicks_count'          => count($validated['chicks_data']),
+                    'chicks_count'          => count($chicksData),
+                    'gica_score'            => $geneticAnalysis['gica']['score'] ?? null,
+                    'expected_hatchlings'   => $geneticAnalysis['reproductive_forecast']['expected_hatchlings'] ?? null,
                     'status'                => 'completed',
                 ],
             ], 200);
@@ -145,7 +131,7 @@ class GeneticComputationController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed — the computation data sent from the frontend is invalid.',
+                'message' => 'Validation failed — the computation data sent from the client is invalid.',
                 'errors'  => $e->errors(),
             ], 422);
 
@@ -164,15 +150,7 @@ class GeneticComputationController extends Controller
     }
 
     /**
-     * Retrieve the stored computation result for a breeding pair.
-     *
      * GET /computation-result/{breedingPairId}
-     *
-     * Returns the computation result with the breeding pair data
-     * attached so the ComputationResult.jsx page can show parent info.
-     *
-     * @param int $breedingPairId
-     * @return \Illuminate\Http\JsonResponse
      */
     public function getComputationResult($breedingPairId)
     {
@@ -188,7 +166,6 @@ class GeneticComputationController extends Controller
                 ], 404);
             }
 
-            // Attach the breeding pair so the frontend can display parent info
             $result->breeding_pair = BreedingPair::find($breedingPairId);
 
             return response()->json([

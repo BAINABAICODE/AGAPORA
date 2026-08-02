@@ -14,9 +14,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import api from '../api/axios';
 import { colors, radius, spacing } from '../theme';
 
-const cleanSplitName = (name) =>
-  name.replace(/^split to /i, '').replace(/^split /i, '');
-
 const BreedingPairsScreen = () => {
   const navigation = useNavigation();
   const [pairs, setPairs] = useState([]);
@@ -158,20 +155,25 @@ const BreedingPairsScreen = () => {
             </Pressable>
             <Text style={styles.modalTitle}>Prediction Result</Text>
             <ScrollView>
-              <Text style={styles.section}>6 Chicks</Text>
-              {selectedResult?.chicks_data?.map((chick, idx) => {
-                const uniqueVisual = [...new Set(chick.visual_mutations || [])];
-                const uniqueSplits = [
-                  ...new Set((chick.split_genes || []).map(cleanSplitName)),
-                ];
-                return (
-                  <Text key={idx} style={styles.chickLine}>
-                    #{idx + 1} {chick.sex === 'Male' ? '♂' : '♀'} {chick.sex} · {chick.base_color}
-                    {uniqueVisual.length ? ` + ${uniqueVisual.join(', ')}` : ''}
-                    {uniqueSplits.length ? ` / split: ${uniqueSplits.join(', ')}` : ''}
+              <Text style={styles.section}>GICA / Forecast</Text>
+              <Text style={styles.chickLine}>
+                Score:{' '}
+                {selectedResult?.genetic_analysis?.gica?.score ?? '—'} / 100 (
+                {selectedResult?.genetic_analysis?.gica?.label || '—'})
+              </Text>
+              <Text style={styles.chickLine}>
+                Expected hatchlings:{' '}
+                {selectedResult?.genetic_analysis?.reproductive_forecast?.expected_hatchlings ??
+                  '—'}
+              </Text>
+              <Text style={styles.section}>Top colors</Text>
+              {Object.entries(selectedResult?.probabilities?.base_colors || {})
+                .slice(0, 4)
+                .map(([color, p]) => (
+                  <Text key={color} style={styles.chickLine}>
+                    {color}: {p}%
                   </Text>
-                );
-              })}
+                ))}
 
               <Pressable
                 style={styles.fullLink}
@@ -179,8 +181,7 @@ const BreedingPairsScreen = () => {
                   const id = selectedResult?.breeding_pair_id;
                   setModalOpen(false);
                   if (id) {
-                    const root = navigation.getParent()?.getParent?.() || navigation.getParent() || navigation;
-                    root.navigate('ComputationResult', { id });
+                    navigation.navigate('ComputationResult', { id });
                   }
                 }}
               >

@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('breeding_pair_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->json('chicks_data'); // Store 6 chicks genetic data
+            $table->json('chicks_data'); // Legacy; may be empty — RBGIA/GICA stored in genetic_analysis
             $table->json('genetic_analysis');
             $table->json('probabilities');
             $table->timestamps();

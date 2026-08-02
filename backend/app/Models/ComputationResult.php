@@ -115,36 +115,33 @@ class ComputationResult extends Model
     }
 
     /**
-     * Get summary of prediction
+     * Get summary of prediction (RBGIA + GICA)
      */
     public function getSummary()
     {
-        $chicks = $this->getFormattedChicks();
-        $probabilities = $this->probabilities;
-        
+        $analysis = $this->genetic_analysis ?? [];
+        $probabilities = $this->probabilities ?? [];
+        $gica = $analysis['gica'] ?? [];
+        $repro = $analysis['reproductive_forecast'] ?? [];
+
         return [
-            'total_chicks' => count($chicks),
-            'male_count' => count(array_filter($chicks, fn($c) => $c['sex'] === 'Male')),
-            'female_count' => count(array_filter($chicks, fn($c) => $c['sex'] === 'Female')),
-            'unique_base_colors' => array_unique(array_column($chicks, 'base_color')),
-            'common_mutations' => $this->getCommonMutations($chicks),
-            'probabilities' => $probabilities
+            'gica_score' => $gica['score'] ?? null,
+            'gica_label' => $gica['label'] ?? null,
+            'expected_hatchlings' => $repro['expected_hatchlings'] ?? null,
+            'eggs_laid_mean' => $repro['eggs_laid_mean'] ?? null,
+            'hatch_rate' => $repro['hatch_rate'] ?? null,
+            'probabilities' => $probabilities,
+            'fixed_n6_removed' => true,
         ];
     }
 
     /**
-     * Get common mutations across chicks
+     * Top mutation probabilities from RBGIA
      */
     private function getCommonMutations($chicks)
     {
-        $allMutations = [];
-        foreach ($chicks as $chick) {
-            foreach ($chick['visual_mutations'] as $mutation) {
-                $allMutations[$mutation] = ($allMutations[$mutation] ?? 0) + 1;
-            }
-        }
-        
-        arsort($allMutations);
-        return array_slice($allMutations, 0, 5, true);
+        $mutations = ($this->probabilities ?? [])['mutations'] ?? [];
+        arsort($mutations);
+        return array_slice($mutations, 0, 5, true);
     }
 }

@@ -161,29 +161,19 @@ const BreedingPairsList = () => {
             <h2>Prediction Result</h2>
             
             <div className="modal-body">
-              {/* 6 Chicks Preview – clean, no duplicates */}
-              <h3>🐣 6 Chicks</h3>
+              <h3>GICA Compatibility</h3>
               <div className="chicks-preview">
-                {selectedResult.chicks_data?.map((chick, idx) => {
-                  // Deduplicate visual mutations
-                  const uniqueVisual = [...new Set(chick.visual_mutations || [])];
-                  // Deduplicate split genes and clean names
-                  const uniqueSplits = [...new Set((chick.split_genes || []).map(cleanSplitName))];
-                  
-                  return (
-                    <div key={idx} className="preview-chick">
-                      <strong>#{idx+1}</strong>
-                      <span>{chick.sex === 'Male' ? '♂' : '♀'} {chick.sex}</span>
-                      <span>· {chick.base_color}</span>
-                      {uniqueVisual.length > 0 && (
-                        <span className="visual-badge">+ {uniqueVisual.join(', ')}</span>
-                      )}
-                      {uniqueSplits.length > 0 && (
-                        <span className="split-badge">/ split: {uniqueSplits.join(', ')}</span>
-                      )}
-                    </div>
-                  );
-                })}
+                <div className="preview-chick">
+                  <strong>
+                    {selectedResult.genetic_analysis?.gica?.score ?? '—'} / 100
+                  </strong>
+                  <span>{selectedResult.genetic_analysis?.gica?.label || '—'}</span>
+                  <span>
+                    · Expected hatchlings:{' '}
+                    {selectedResult.genetic_analysis?.reproductive_forecast
+                      ?.expected_hatchlings ?? '—'}
+                  </span>
+                </div>
               </div>
 
               {/* Percentages Section (unchanged) */}

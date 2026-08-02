@@ -1,0 +1,170 @@
+import { StyleSheet, Platform, StatusBar } from 'react-native';
+import { colors, radius, spacing } from '../theme';
+
+const topInset = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+
+export default StyleSheet.create({
+  safe: {
+    backgroundColor: 'rgba(18, 22, 28, 0.96)',
+    paddingTop: topInset,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    zIndex: 100,
+    elevation: 8,
+  },
+  bar: {
+    minHeight: 64,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexShrink: 1,
+  },
+  logoImage: {
+    width: 36,
+    height: 36,
+  },
+  logoText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#de9218',
+    letterSpacing: 0.6,
+  },
+  toggle: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+  },
+  toggleBar: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#e8ecef',
+    borderRadius: 999,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    zIndex: 200,
+  },
+  drawer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: '88%',
+    maxWidth: 320,
+    backgroundColor: 'rgba(18, 22, 28, 0.98)',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(255, 255, 255, 0.08)',
+    paddingTop: topInset + 72,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    zIndex: 201,
+  },
+  menu: {
+    gap: 4,
+    flex: 1,
+  },
+  link: {
+    color: '#e8ecef',
+    fontSize: 16,
+    fontWeight: '500',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: radius.md,
+  },
+  linkActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    color: '#fff',
+  },
+  auth: {
+    gap: 12,
+    marginTop: 'auto',
+  },
+  loginBtn: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  loginText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  signupBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  signupText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  userBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#ffd89b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontWeight: '700',
+    color: '#1a1a2e',
+  },
+  userName: {
+    color: '#fff',
+    fontWeight: '500',
+    flex: 1,
+  },
+  dropdown: {
+    marginTop: 8,
+    backgroundColor: 'rgba(25, 28, 34, 0.98)',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownText: {
+    color: '#e8ecef',
+    fontSize: 14,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  logoutText: {
+    color: '#ff7b7b',
+    fontSize: 14,
+  },
+});
